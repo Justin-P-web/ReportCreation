@@ -63,4 +63,31 @@ impl Block {
     pub fn raw<T: Into<String>>(content: T) -> Self {
         Block::Raw(content.into())
     }
+
+    /// Build a table block from a Polars `DataFrame`.
+    ///
+    /// This helper converts column names into table headers and stringifies
+    /// each value row-by-row. Enable the `polars` cargo feature to use it.
+    #[cfg(feature = "polars")]
+    pub fn from_polars_dataframe(
+        dataframe: &polars::prelude::DataFrame,
+    ) -> polars::prelude::PolarsResult<Self> {
+        let headers = dataframe
+            .get_column_names()
+            .iter()
+            .map(|name| name.to_string())
+            .collect();
+
+        let mut rows = Vec::with_capacity(dataframe.height());
+        for row_idx in 0..dataframe.height() {
+            let mut row = Vec::with_capacity(dataframe.width());
+            for column in dataframe.get_columns() {
+                let value = column.get(row_idx)?;
+                row.push(value.to_string());
+            }
+            rows.push(row);
+        }
+
+        Ok(Block::Table { headers, rows })
+    }
 }
