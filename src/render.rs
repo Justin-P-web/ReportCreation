@@ -45,10 +45,11 @@ pub(crate) fn render_blocks(output: &mut String, blocks: &[Block], depth: usize)
 }
 
 fn render_table(output: &mut String, headers: &[String], rows: &[Vec<String>]) {
-    let column_spec: String = std::iter::repeat("(flex: 1,) ")
+    let column_spec = std::iter::repeat("(flex: 1,)")
         .take(headers.len())
-        .collect::<String>();
-    writeln!(output, "#table(columns: ({}),", column_spec.trim_end())
+        .collect::<Vec<_>>()
+        .join(", ");
+    writeln!(output, "#table(columns: ({}))[", column_spec)
         .expect("writing to string never fails");
     output.push_str("  [");
     for (idx, header) in headers.iter().enumerate() {
@@ -57,7 +58,7 @@ fn render_table(output: &mut String, headers: &[String], rows: &[Vec<String>]) {
         }
         output.push_str(header.trim());
     }
-    output.push_str("],\n");
+    output.push_str("]\n");
 
     for row in rows {
         output.push_str("  [");
@@ -67,8 +68,8 @@ fn render_table(output: &mut String, headers: &[String], rows: &[Vec<String>]) {
             }
             output.push_str(cell.trim());
         }
-        output.push_str("],\n");
+        output.push_str("]\n");
     }
 
-    output.push_str(")\n");
+    output.push_str("]\n");
 }
