@@ -9,6 +9,8 @@ use typst::syntax::{SyntaxError, parse};
 pub struct Report {
     title: String,
     author: Option<String>,
+    header: Option<String>,
+    footer: Option<String>,
     include_outline: bool,
     sections: Vec<Section>,
     front_matter: Vec<Block>,
@@ -20,6 +22,8 @@ impl Report {
         Self {
             title: title.into(),
             author: None,
+            header: None,
+            footer: None,
             include_outline: true,
             sections: Vec::new(),
             front_matter: Vec::new(),
@@ -29,6 +33,18 @@ impl Report {
     /// Set the author for the report.
     pub fn author<T: Into<String>>(mut self, author: T) -> Self {
         self.author = Some(author.into());
+        self
+    }
+
+    /// Configure a page header for the report.
+    pub fn header<T: Into<String>>(mut self, header: T) -> Self {
+        self.header = Some(header.into());
+        self
+    }
+
+    /// Configure a page footer for the report.
+    pub fn footer<T: Into<String>>(mut self, footer: T) -> Self {
+        self.footer = Some(footer.into());
         self
     }
 
@@ -76,6 +92,15 @@ impl Report {
         )
         .expect("writing to string never fails");
 
+        if self.header.is_some() || self.footer.is_some() {
+            writeln!(
+                output,
+                "#set page({})",
+                render_page(self.header.as_deref(), self.footer.as_deref())
+            )
+            .expect("writing to string never fails");
+        }
+
         writeln!(output, "= {}", self.title).expect("writing to string never fails");
 
         if self.include_outline {
@@ -104,4 +129,28 @@ fn render_author(author: Option<&str>) -> String {
         Some(name) => format!(", author: \"{}\"", name),
         None => String::new(),
     }
+}
+
+fn render_page(header: Option<&str>, footer: Option<&str>) -> String {
+    let mut parts = Vec::new();
+
+    if let Some(header_content) = header {
+        parts.push(format!(
+            "header: \"{}\"",
+            escape_typst_string(header_content)
+        ));
+    }
+
+    if let Some(footer_content) = footer {
+        parts.push(format!(
+            "footer: \"{}\"",
+            escape_typst_string(footer_content)
+        ));
+    }
+
+    parts.join(", ")
+}
+
+fn escape_typst_string(raw: &str) -> String {
+    raw.replace('\\', "\\\\").replace('"', "\\\"")
 }
