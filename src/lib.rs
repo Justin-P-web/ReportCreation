@@ -42,6 +42,23 @@ mod tests {
     }
 
     #[test]
+    fn sets_page_headers_and_footers() {
+        let report = Report::new("Branded")
+            .header("Company Report")
+            .footer("Page {{page()}} of {{pages()}}")
+            .add_section(
+                Section::new("Summary")
+                    .add_block(Block::paragraph("Quarterly performance overview.")),
+            );
+
+        let rendered = report.render();
+
+        assert!(rendered.contains(
+            "#set page(header: \"Company Report\", footer: \"Page {{page()}} of {{pages()}}\")"
+        ));
+    }
+
+    #[test]
     fn supports_code_block_rendering() {
         let report = Report::new("Dev Notes").add_section(
             Section::new("Snippets").add_block(Block::code(Some("rust"), "fn main() {}")),

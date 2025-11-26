@@ -20,6 +20,8 @@ use report_creation::{Block, Report, Section};
 
 let document = Report::new("Weekly Status")
     .author("Ada Lovelace")
+    .header("Acme Corp | Weekly Status")
+    .footer("Page {{page()}} of {{pages()}}")
     .add_front_matter(Block::paragraph("Summary of the week's work."))
     .add_section(
         Section::new("Highlights").add_block(Block::bullets([
@@ -43,8 +45,9 @@ println!("{}", document);
 
 The rendered Typst document includes a `#set document(..)` declaration, an
 outline by default, nested section headings, and the blocks you composed. You
-can disable the outline with `Report::with_outline(false)` and add nested
-subsections with `Section::add_subsection`.
+can disable the outline with `Report::with_outline(false)`, add reusable page
+chrome with `Report::header` and `Report::footer`, and add nested subsections
+with `Section::add_subsection`.
 
 ## Turning Polars DataFrames into Typst tables
 
