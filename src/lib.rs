@@ -54,16 +54,17 @@ mod tests {
 
     #[test]
     fn validated_render_surfaces_syntax_errors() {
-        let invalid_report = Report::new("Broken").add_section(
-            Section::new("Faulty").add_block(Block::raw("[#unclosed(")),
-        );
+        let invalid_report = Report::new("Broken")
+            .add_section(Section::new("Faulty").add_block(Block::raw("[#unclosed(")));
 
         let validation = invalid_report.render_validated();
 
         assert!(validation.is_err());
-        assert!(validation
-            .unwrap_err()
-            .iter()
-            .any(|err| err.message.contains("unclosed")));
+        assert!(
+            validation
+                .unwrap_err()
+                .iter()
+                .any(|err| err.message.contains("unclosed"))
+        );
     }
 }
