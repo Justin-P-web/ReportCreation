@@ -3,5 +3,9 @@ name = "ReportCreation"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+polars = ["dep:polars"]
+
 [dependencies]
 typst = "0.11"
+polars = { version = "0.44.2", optional = true, default-features = false, features = ["fmt"] }

@@ -45,3 +45,33 @@ The rendered Typst document includes a `#set document(..)` declaration, an
 outline by default, nested section headings, and the blocks you composed. You
 can disable the outline with `Report::with_outline(false)` and add nested
 subsections with `Section::add_subsection`.
+
+## Turning Polars DataFrames into Typst tables
+
+Enable the optional `polars` feature to convert a `polars::prelude::DataFrame`
+into a rendered table block:
+
+```toml
+[dependencies]
+report_creation = { path = ".", features = ["polars"] }
+polars = { version = "0.44", default-features = false, features = ["fmt"] }
+```
+
+Then build the table straight from your DataFrame:
+
+```rust
+use polars::prelude::*;
+use report_creation::{Block, Report};
+
+let df = df!(
+    "Feature" => ["Adoption", "Churn"],
+    "Value" => [0.81, 0.07],
+)?;
+
+let document = Report::new("Metrics")
+    .add_block(Block::from_polars_dataframe(&df)?)
+    .render();
+```
+
+Each column name becomes a table header, and values are stringified row-by-row
+in the rendered Typst output.
