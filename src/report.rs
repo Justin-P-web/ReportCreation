@@ -1,7 +1,7 @@
 use std::fmt::Write;
 
 use crate::{block::Block, render::render_blocks, section::Section};
-use typst::syntax::{parse, SyntaxError};
+use typst::syntax::{SyntaxError, parse};
 
 /// Represents a report composed of structured sections and blocks that can be
 /// rendered to Typst markup.
