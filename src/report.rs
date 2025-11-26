@@ -1,6 +1,7 @@
 use std::fmt::Write;
 
 use crate::{block::Block, render::render_blocks, section::Section};
+use typst::syntax::{parse, SyntaxError};
 
 /// Represents a report composed of structured sections and blocks that can be
 /// rendered to Typst markup.
@@ -52,11 +53,24 @@ impl Report {
 
     /// Render the report to a Typst document string.
     pub fn render(&self) -> String {
+        self.render_validated().unwrap_or_else(|errors| {
+            let summary = errors
+                .iter()
+                .map(|err| err.message.to_string())
+                .collect::<Vec<_>>()
+                .join("; ");
+            panic!("generated Typst markup contains syntax errors: {}", summary)
+        })
+    }
+
+    /// Render the report to Typst markup, returning syntax errors if the
+    /// generated output is invalid Typst.
+    pub fn render_validated(&self) -> Result<String, Vec<SyntaxError>> {
         let mut output = String::new();
 
         writeln!(
             output,
-            "#set document(title: \"{}\"{}\n)",
+            "#set document(title: \"{}\"{})",
             self.title,
             render_author(self.author.as_deref())
         )
@@ -74,7 +88,14 @@ impl Report {
             section.render(&mut output, 1);
         }
 
-        output
+        let parsed = parse(&output);
+        let errors = parsed.errors();
+
+        if errors.is_empty() {
+            Ok(output)
+        } else {
+            Err(errors)
+        }
     }
 }
 

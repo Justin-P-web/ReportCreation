@@ -58,4 +58,9 @@ impl Block {
                 .collect(),
         }
     }
+
+    /// Convenience constructor for raw Typst content.
+    pub fn raw<T: Into<String>>(content: T) -> Self {
+        Block::Raw(content.into())
+    }
 }
