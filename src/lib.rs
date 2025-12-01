@@ -146,4 +146,22 @@ mod tests {
 
         assert_eq!(rendered, saved);
     }
+
+    #[test]
+    fn render_writes_pdf_when_configured() {
+        let _guard = DirGuard::in_temp("render_writes_pdf_when_configured");
+
+        let report = Report::new("PDF please")
+            .generate_pdf(true)
+            .add_section(Section::new("Summary").add_block(paragraph("PDF output.")));
+
+        report.render();
+
+        let pdf_path = env::current_dir()
+            .expect("should have temp cwd")
+            .join("pdf_please.pdf");
+
+        let pdf_bytes = fs::read(pdf_path).expect("PDF should be written");
+        assert!(!pdf_bytes.is_empty());
+    }
 }
