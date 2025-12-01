@@ -1,12 +1,12 @@
 use std::fmt::Write;
 
-use crate::{block::Block, render::render_blocks};
+use crate::{block::BlockNode, render::render_blocks};
 
 /// A section with a heading and a list of content blocks.
 #[derive(Debug, Default)]
 pub struct Section {
     title: String,
-    blocks: Vec<Block>,
+    blocks: Vec<BlockNode>,
     subsections: Vec<Section>,
 }
 
@@ -21,7 +21,7 @@ impl Section {
     }
 
     /// Add a block of content to the section.
-    pub fn add_block(mut self, block: Block) -> Self {
+    pub fn add_block(mut self, block: BlockNode) -> Self {
         self.blocks.push(block);
         self
     }

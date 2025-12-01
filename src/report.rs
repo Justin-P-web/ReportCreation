@@ -1,7 +1,11 @@
 use std::fmt::Write;
 
-use crate::{block::Block, render::render_blocks, section::Section};
-use typst::syntax::{SyntaxError, parse};
+use crate::{
+    block::BlockNode,
+    render::render_blocks,
+    section::Section,
+};
+use typst::syntax::{parse, SyntaxError};
 
 /// Represents a report composed of structured sections and blocks that can be
 /// rendered to Typst markup.
@@ -13,7 +17,7 @@ pub struct Report {
     footer: Option<String>,
     include_outline: bool,
     sections: Vec<Section>,
-    front_matter: Vec<Block>,
+    front_matter: Vec<BlockNode>,
 }
 
 impl Report {
@@ -56,7 +60,7 @@ impl Report {
     }
 
     /// Add content that should appear before any section headings.
-    pub fn add_front_matter(mut self, block: Block) -> Self {
+    pub fn add_front_matter(mut self, block: BlockNode) -> Self {
         self.front_matter.push(block);
         self
     }
