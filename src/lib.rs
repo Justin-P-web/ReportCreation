@@ -3,7 +3,9 @@ mod render;
 mod report;
 mod section;
 
-pub use block::Block;
+pub use block::{bullets, code, numbered, paragraph, raw, table, Block, BlockNode};
+#[cfg(feature = "polars")]
+pub use block::from_polars_dataframe;
 pub use report::Report;
 pub use section::Section;
 
@@ -15,18 +17,18 @@ mod tests {
     fn renders_report_with_outline_and_sections() {
         let report = Report::new("Weekly Status")
             .author("Ada Lovelace")
-            .add_front_matter(Block::paragraph("This report summarizes the week."))
+            .add_front_matter(paragraph("This report summarizes the week."))
             .add_section(
                 Section::new("Highlights")
-                    .add_block(Block::bullets(["Released v1.2", "Onboarded new teammate"]))
-                    .add_subsection(Section::new("Release Details").add_block(Block::paragraph(
+                    .add_block(bullets(["Released v1.2", "Onboarded new teammate"]))
+                    .add_subsection(Section::new("Release Details").add_block(paragraph(
                         "The release focused on stability and internal metrics.",
                     ))),
             )
-            .add_section(Section::new("Metrics").add_block(Block::Table {
-                headers: vec!["Key Metric".into(), "Value".into()],
-                rows: vec![vec!["Users".into(), "1,024".into()]],
-            }));
+            .add_section(Section::new("Metrics").add_block(table(
+                vec!["Key Metric".to_string(), "Value".to_string()],
+                vec![vec!["Users".to_string(), "1,024".to_string()]],
+            )));
 
         let rendered = report.render();
 
@@ -46,10 +48,9 @@ mod tests {
         let report = Report::new("Branded")
             .header("Company Report")
             .footer("Page {{page()}} of {{pages()}}")
-            .add_section(
-                Section::new("Summary")
-                    .add_block(Block::paragraph("Quarterly performance overview.")),
-            );
+            .add_section(Section::new("Summary").add_block(paragraph(
+                "Quarterly performance overview.",
+            )));
 
         let rendered = report.render();
 
@@ -61,7 +62,7 @@ mod tests {
     #[test]
     fn supports_code_block_rendering() {
         let report = Report::new("Dev Notes").add_section(
-            Section::new("Snippets").add_block(Block::code(Some("rust"), "fn main() {}")),
+            Section::new("Snippets").add_block(code(Some("rust"), "fn main() {}")),
         );
 
         let rendered = report.render();
@@ -72,7 +73,7 @@ mod tests {
     #[test]
     fn validated_render_surfaces_syntax_errors() {
         let invalid_report = Report::new("Broken")
-            .add_section(Section::new("Faulty").add_block(Block::raw("[#unclosed(")));
+            .add_section(Section::new("Faulty").add_block(raw("[#unclosed(")));
 
         let validation = invalid_report.render_validated();
 
