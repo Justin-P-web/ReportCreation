@@ -1,7 +1,17 @@
-use std::{fmt::Write, fs};
+use std::{fmt::Write, fs, path::{Path, PathBuf}};
 
 use crate::{block::BlockNode, render::render_blocks, section::Section};
-use typst::syntax::{SyntaxError, parse};
+use comemo::Prehashed;
+use typst::{
+    Library, World, compile,
+    diag::{FileError, FileResult},
+    eval::Tracer,
+    foundations::{Bytes, Smart},
+    syntax::{FileId, SyntaxError, parse},
+    text::{Font, FontBook},
+};
+use typst_assets::fonts;
+use typst_pdf::pdf;
 
 /// Represents a report composed of structured sections and blocks that can be
 /// rendered to Typst markup.
@@ -12,6 +22,7 @@ pub struct Report {
     header: Option<String>,
     footer: Option<String>,
     include_outline: bool,
+    generate_pdf: bool,
     sections: Vec<Section>,
     front_matter: Vec<BlockNode>,
 }
@@ -25,9 +36,16 @@ impl Report {
             header: None,
             footer: None,
             include_outline: true,
+            generate_pdf: false,
             sections: Vec::new(),
             front_matter: Vec::new(),
         }
+    }
+
+    /// Configure whether a PDF should be generated alongside the Typst output.
+    pub fn generate_pdf(mut self, generate_pdf: bool) -> Self {
+        self.generate_pdf = generate_pdf;
+        self
     }
 
     /// Set the author for the report.
@@ -79,8 +97,22 @@ impl Report {
         });
 
         let file_name = typst_file_name(&self.title);
-        fs::write(&file_name, &rendered)
-            .unwrap_or_else(|err| panic!("failed to write Typst output to {}: {}", file_name, err));
+        let file_path = std::env::current_dir()
+            .unwrap_or_else(|err| panic!("failed to resolve current directory: {}", err))
+            .join(&file_name);
+
+        fs::write(&file_path, &rendered).unwrap_or_else(|err| {
+            panic!("failed to write Typst output to {}: {}", file_path.display(), err)
+        });
+
+        if self.generate_pdf {
+            let pdf_bytes = compile_pdf(&rendered, &file_path);
+            let pdf_file = pdf_file_name(&self.title);
+
+            fs::write(&pdf_file, &pdf_bytes).unwrap_or_else(|err| {
+                panic!("failed to write PDF output to {}: {}", pdf_file, err)
+            });
+        }
 
         rendered
     }
@@ -162,6 +194,14 @@ fn escape_typst_string(raw: &str) -> String {
 }
 
 fn typst_file_name(title: &str) -> String {
+    format!("{}.typ", normalized_stem(title))
+}
+
+fn pdf_file_name(title: &str) -> String {
+    format!("{}.pdf", normalized_stem(title))
+}
+
+fn normalized_stem(title: &str) -> String {
     let normalized = title
         .chars()
         .map(|ch| {
@@ -187,5 +227,101 @@ fn typst_file_name(title: &str) -> String {
         compacted
     };
 
-    format!("{}.typ", stem)
+    stem
+}
+
+struct InMemoryWorld {
+    source: typst::syntax::Source,
+    library: Prehashed<Library>,
+    book: Prehashed<FontBook>,
+    fonts: Vec<Font>,
+    root: PathBuf,
+}
+
+impl InMemoryWorld {
+    fn new(source: String, main_path: PathBuf) -> Self {
+        let root = main_path
+            .parent()
+            .map(Path::to_path_buf)
+            .unwrap_or_else(|| PathBuf::from("."));
+
+        let main_id = FileId::new(
+            None,
+            typst::syntax::VirtualPath::within_root(&main_path, &root)
+                .unwrap_or_else(|| typst::syntax::VirtualPath::new(&main_path)),
+        );
+
+        let source = typst::syntax::Source::new(main_id, source);
+
+        let fonts: Vec<Font> = fonts()
+            .flat_map(|data| Font::iter(Bytes::from(data.to_vec())))
+            .collect();
+        let book = FontBook::from_fonts(&fonts);
+
+        Self {
+            source,
+            library: Prehashed::new(Library::default()),
+            book: Prehashed::new(book),
+            fonts,
+            root,
+        }
+    }
+}
+
+impl World for InMemoryWorld {
+    fn library(&self) -> &Prehashed<Library> {
+        &self.library
+    }
+
+    fn book(&self) -> &Prehashed<FontBook> {
+        &self.book
+    }
+
+    fn main(&self) -> typst::syntax::Source {
+        self.source.clone()
+    }
+
+    fn source(&self, id: FileId) -> FileResult<typst::syntax::Source> {
+        if id == self.source.id() {
+            return Ok(self.source.clone());
+        }
+
+        let path = id
+            .vpath()
+            .resolve(&self.root)
+            .ok_or_else(|| FileError::NotFound(id.vpath().as_rootless_path().to_path_buf()))?;
+
+        let text = fs::read_to_string(&path)
+            .map_err(|_| FileError::NotFound(id.vpath().as_rootless_path().to_path_buf()))?;
+
+        Ok(typst::syntax::Source::new(id, text))
+    }
+
+    fn file(&self, id: FileId) -> FileResult<Bytes> {
+        let path = id
+            .vpath()
+            .resolve(&self.root)
+            .ok_or_else(|| FileError::NotFound(id.vpath().as_rootless_path().to_path_buf()))?;
+
+        fs::read(path)
+            .map(Bytes::from)
+            .map_err(|_| FileError::NotFound(id.vpath().as_rootless_path().to_path_buf()))
+    }
+
+    fn font(&self, index: usize) -> Option<Font> {
+        self.fonts.get(index).cloned()
+    }
+
+    fn today(&self, _offset: Option<i64>) -> Option<typst::foundations::Datetime> {
+        None
+    }
+}
+
+fn compile_pdf(source: &str, main_path: &Path) -> Vec<u8> {
+    let world = InMemoryWorld::new(source.to_string(), main_path.to_path_buf());
+    let mut tracer = Tracer::new();
+    let document = compile(&world, &mut tracer)
+        .unwrap_or_else(|err| panic!("failed to compile Typst document to PDF: {err:?}"));
+
+    pdf(&document, Smart::Auto, None)
 }

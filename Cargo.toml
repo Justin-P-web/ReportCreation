@@ -7,5 +7,8 @@ edition = "2024"
 polars = ["dep:polars"]
 
 [dependencies]
-typst = "0.11"
+typst = "0.11.1"
+typst-pdf = "0.11"
+typst-assets = { version = "0.11.1", features = ["fonts"] }
+comemo = "0.4"
 polars = { version = "0.44.2", optional = true, default-features = false, features = ["fmt"] }
