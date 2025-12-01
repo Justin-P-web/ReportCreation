@@ -1,4 +1,5 @@
 use std::{fmt::Write, fs, path::{Path, PathBuf}};
+use time::{Duration, OffsetDateTime};
 
 use crate::{block::BlockNode, render::render_blocks, section::Section};
 use comemo::Prehashed;
@@ -312,8 +313,23 @@ impl World for InMemoryWorld {
         self.fonts.get(index).cloned()
     }
 
-    fn today(&self, _offset: Option<i64>) -> Option<typst::foundations::Datetime> {
-        None
+    fn today(&self, offset: Option<i64>) -> Option<typst::foundations::Datetime> {
+        let now = match offset {
+            Some(hours) => OffsetDateTime::now_utc().checked_add(Duration::hours(hours))?,
+            None => OffsetDateTime::now_local().ok()?,
+        };
+
+        let date = now.date();
+        let time = now.time();
+
+        typst::foundations::Datetime::from_ymd_hms(
+            date.year(),
+            date.month() as u8,
+            date.day(),
+            time.hour(),
+            time.minute(),
+            time.second(),
+        )
     }
 }
 
