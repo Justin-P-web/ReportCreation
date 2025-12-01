@@ -1,4 +1,4 @@
-use std::{fmt::Write, fs};
+use std::{fmt::Write, fs, path::{Path, PathBuf}};
 
 use crate::{block::BlockNode, render::render_blocks, section::Section};
 use comemo::Prehashed;
@@ -97,11 +97,16 @@ impl Report {
         });
 
         let file_name = typst_file_name(&self.title);
-        fs::write(&file_name, &rendered)
-            .unwrap_or_else(|err| panic!("failed to write Typst output to {}: {}", file_name, err));
+        let file_path = std::env::current_dir()
+            .unwrap_or_else(|err| panic!("failed to resolve current directory: {}", err))
+            .join(&file_name);
+
+        fs::write(&file_path, &rendered).unwrap_or_else(|err| {
+            panic!("failed to write Typst output to {}: {}", file_path.display(), err)
+        });
 
         if self.generate_pdf {
-            let pdf_bytes = compile_pdf(&rendered);
+            let pdf_bytes = compile_pdf(&rendered, &file_path);
             let pdf_file = pdf_file_name(&self.title);
 
             fs::write(&pdf_file, &pdf_bytes).unwrap_or_else(|err| {
@@ -230,11 +235,23 @@ struct InMemoryWorld {
     library: Prehashed<Library>,
     book: Prehashed<FontBook>,
     fonts: Vec<Font>,
+    root: PathBuf,
 }
 
 impl InMemoryWorld {
-    fn new(source: String) -> Self {
-        let source = typst::syntax::Source::detached(source);
+    fn new(source: String, main_path: PathBuf) -> Self {
+        let root = main_path
+            .parent()
+            .map(Path::to_path_buf)
+            .unwrap_or_else(|| PathBuf::from("."));
+
+        let main_id = FileId::new(
+            None,
+            typst::syntax::VirtualPath::within_root(&main_path, &root)
+                .unwrap_or_else(|| typst::syntax::VirtualPath::new(&main_path)),
+        );
+
+        let source = typst::syntax::Source::new(main_id, source);
 
         let fonts: Vec<Font> = fonts()
             .flat_map(|data| Font::iter(Bytes::from(data.to_vec())))
@@ -246,6 +263,7 @@ impl InMemoryWorld {
             library: Prehashed::new(Library::default()),
             book: Prehashed::new(book),
             fonts,
+            root,
         }
     }
 }
@@ -265,18 +283,29 @@ impl World for InMemoryWorld {
 
     fn source(&self, id: FileId) -> FileResult<typst::syntax::Source> {
         if id == self.source.id() {
-            Ok(self.source.clone())
-        } else {
-            Err(FileError::NotFound(
-                id.vpath().as_rootless_path().to_path_buf(),
-            ))
+            return Ok(self.source.clone());
         }
+
+        let path = id
+            .vpath()
+            .resolve(&self.root)
+            .ok_or_else(|| FileError::NotFound(id.vpath().as_rootless_path().to_path_buf()))?;
+
+        let text = fs::read_to_string(&path)
+            .map_err(|_| FileError::NotFound(id.vpath().as_rootless_path().to_path_buf()))?;
+
+        Ok(typst::syntax::Source::new(id, text))
     }
 
     fn file(&self, id: FileId) -> FileResult<Bytes> {
-        Err(FileError::NotFound(
-            id.vpath().as_rootless_path().to_path_buf(),
-        ))
+        let path = id
+            .vpath()
+            .resolve(&self.root)
+            .ok_or_else(|| FileError::NotFound(id.vpath().as_rootless_path().to_path_buf()))?;
+
+        fs::read(path)
+            .map(Bytes::from)
+            .map_err(|_| FileError::NotFound(id.vpath().as_rootless_path().to_path_buf()))
     }
 
     fn font(&self, index: usize) -> Option<Font> {
@@ -288,8 +317,8 @@ impl World for InMemoryWorld {
     }
 }
 
-fn compile_pdf(source: &str) -> Vec<u8> {
-    let world = InMemoryWorld::new(source.to_string());
+fn compile_pdf(source: &str, main_path: &Path) -> Vec<u8> {
+    let world = InMemoryWorld::new(source.to_string(), main_path.to_path_buf());
     let mut tracer = Tracer::new();
     let document = compile(&world, &mut tracer)
         .unwrap_or_else(|err| panic!("failed to compile Typst document to PDF: {err:?}"));
