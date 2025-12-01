@@ -3,18 +3,60 @@ mod render;
 mod report;
 mod section;
 
-pub use block::{bullets, code, numbered, paragraph, raw, table, Block, BlockNode};
 #[cfg(feature = "polars")]
 pub use block::from_polars_dataframe;
+pub use block::{Block, BlockNode, bullets, code, numbered, paragraph, raw, table};
 pub use report::Report;
 pub use section::Section;
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::{
+        env, fs,
+        path::PathBuf,
+        time::{SystemTime, UNIX_EPOCH},
+    };
+
+    struct DirGuard {
+        original: PathBuf,
+        temp_dir: PathBuf,
+    }
+
+    impl DirGuard {
+        fn in_temp(test_name: &str) -> Self {
+            let temp_dir = unique_temp_dir(test_name);
+            fs::create_dir_all(&temp_dir).expect("should be able to create temp dir");
+
+            let original = env::current_dir().expect("cwd should be available");
+            env::set_current_dir(&temp_dir).expect("should be able to set cwd for test");
+
+            Self { original, temp_dir }
+        }
+    }
+
+    impl Drop for DirGuard {
+        fn drop(&mut self) {
+            let _ = env::set_current_dir(&self.original);
+            let _ = fs::remove_dir_all(&self.temp_dir);
+        }
+    }
+
+    fn unique_temp_dir(test_name: &str) -> PathBuf {
+        env::temp_dir().join(format!(
+            "report_creation_test_{}_{}",
+            test_name,
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("system time should be valid")
+                .as_millis()
+        ))
+    }
 
     #[test]
     fn renders_report_with_outline_and_sections() {
+        let _guard = DirGuard::in_temp("renders_report_with_outline_and_sections");
+
         let report = Report::new("Weekly Status")
             .author("Ada Lovelace")
             .add_front_matter(paragraph("This report summarizes the week."))
@@ -45,12 +87,14 @@ mod tests {
 
     #[test]
     fn sets_page_headers_and_footers() {
+        let _guard = DirGuard::in_temp("sets_page_headers_and_footers");
+
         let report = Report::new("Branded")
             .header("Company Report")
             .footer("Page {{page()}} of {{pages()}}")
-            .add_section(Section::new("Summary").add_block(paragraph(
-                "Quarterly performance overview.",
-            )));
+            .add_section(
+                Section::new("Summary").add_block(paragraph("Quarterly performance overview.")),
+            );
 
         let rendered = report.render();
 
@@ -61,9 +105,10 @@ mod tests {
 
     #[test]
     fn supports_code_block_rendering() {
-        let report = Report::new("Dev Notes").add_section(
-            Section::new("Snippets").add_block(code(Some("rust"), "fn main() {}")),
-        );
+        let _guard = DirGuard::in_temp("supports_code_block_rendering");
+
+        let report = Report::new("Dev Notes")
+            .add_section(Section::new("Snippets").add_block(code(Some("rust"), "fn main() {}")));
 
         let rendered = report.render();
 
@@ -72,8 +117,8 @@ mod tests {
 
     #[test]
     fn validated_render_surfaces_syntax_errors() {
-        let invalid_report = Report::new("Broken")
-            .add_section(Section::new("Faulty").add_block(raw("[#unclosed(")));
+        let invalid_report =
+            Report::new("Broken").add_section(Section::new("Faulty").add_block(raw("[#unclosed(")));
 
         let validation = invalid_report.render_validated();
 
@@ -84,5 +129,21 @@ mod tests {
                 .iter()
                 .any(|err| err.message.contains("unclosed"))
         );
+    }
+
+    #[test]
+    fn render_writes_typ_file_using_title() {
+        let _guard = DirGuard::in_temp("render_writes_typ_file_using_title");
+
+        let report = Report::new("Build & Ship!")
+            .add_section(Section::new("Summary").add_block(paragraph("Ready to go.")));
+
+        let rendered = report.render();
+        let typ_path = env::current_dir()
+            .expect("should have temp cwd")
+            .join("build_ship.typ");
+        let saved = fs::read_to_string(&typ_path).expect("render should create typ file");
+
+        assert_eq!(rendered, saved);
     }
 }

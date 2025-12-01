@@ -1,11 +1,7 @@
-use std::fmt::Write;
+use std::{fmt::Write, fs};
 
-use crate::{
-    block::BlockNode,
-    render::render_blocks,
-    section::Section,
-};
-use typst::syntax::{parse, SyntaxError};
+use crate::{block::BlockNode, render::render_blocks, section::Section};
+use typst::syntax::{SyntaxError, parse};
 
 /// Represents a report composed of structured sections and blocks that can be
 /// rendered to Typst markup.
@@ -73,14 +69,20 @@ impl Report {
 
     /// Render the report to a Typst document string.
     pub fn render(&self) -> String {
-        self.render_validated().unwrap_or_else(|errors| {
+        let rendered = self.render_validated().unwrap_or_else(|errors| {
             let summary = errors
                 .iter()
                 .map(|err| err.message.to_string())
                 .collect::<Vec<_>>()
                 .join("; ");
             panic!("generated Typst markup contains syntax errors: {}", summary)
-        })
+        });
+
+        let file_name = typst_file_name(&self.title);
+        fs::write(&file_name, &rendered)
+            .unwrap_or_else(|err| panic!("failed to write Typst output to {}: {}", file_name, err));
+
+        rendered
     }
 
     /// Render the report to Typst markup, returning syntax errors if the
@@ -157,4 +159,33 @@ fn render_page(header: Option<&str>, footer: Option<&str>) -> String {
 
 fn escape_typst_string(raw: &str) -> String {
     raw.replace('\\', "\\\\").replace('"', "\\\"")
+}
+
+fn typst_file_name(title: &str) -> String {
+    let normalized = title
+        .chars()
+        .map(|ch| {
+            if ch.is_ascii_alphanumeric() {
+                ch.to_ascii_lowercase()
+            } else if ch.is_whitespace() || ch == '-' {
+                '_'
+            } else {
+                '_'
+            }
+        })
+        .collect::<String>();
+
+    let compacted = normalized
+        .split('_')
+        .filter(|segment| !segment.is_empty())
+        .collect::<Vec<_>>()
+        .join("_");
+
+    let stem = if compacted.is_empty() {
+        "report".to_string()
+    } else {
+        compacted
+    };
+
+    format!("{}.typ", stem)
 }
