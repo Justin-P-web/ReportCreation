@@ -158,8 +158,8 @@ impl Report {
         )
         .expect("writing to string never fails");
 
-        output.push_str(contents_table_function());
-        output.push_str(figure_table_function());
+        output.push_str(&contents_table_function());
+        output.push_str(&figure_table_function());
 
         if self.header.is_some() || self.footer.is_some() {
             writeln!(
@@ -234,46 +234,83 @@ fn escape_typst_string(raw: &str) -> String {
     raw.replace('\\', "\\\\").replace('"', "\\\"")
 }
 
-fn contents_table_function() -> &'static str {
-    r#"#let contents_table() = {
-  let entries = query(selector: heading);
-
-  if entries.len() == 0 {
-    []
-  } else {
-    table(
-      columns: (auto, 1fr),
-      align: (right, left),
-      ..entries.map(entry => [
-        link(entry.location(), [entry.counter.display()])
-        entry.body
-      ])
-    )
-  }
+#[derive(Debug, Clone, Default)]
+pub struct Outline {
+    title: Option<String>,
+    target: Option<String>,
+    indent: Option<String>,
+    depth: Option<u8>,
 }
 
-"#
+impl Outline {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn title<T: Into<String>>(mut self, title: T) -> Self {
+        self.title = Some(title.into());
+        self
+    }
+
+    pub fn target<T: Into<String>>(mut self, target: T) -> Self {
+        self.target = Some(target.into());
+        self
+    }
+
+    pub fn indent<T: Into<String>>(mut self, indent: T) -> Self {
+        self.indent = Some(indent.into());
+        self
+    }
+
+    pub fn depth(mut self, depth: u8) -> Self {
+        self.depth = Some(depth);
+        self
+    }
+
+    pub fn table_of_contents() -> Self {
+        Self::new().title("none").indent("auto")
+    }
+
+    pub fn figure_list() -> Self {
+        Self::new()
+            .title("none")
+            .target("figure")
+            .indent("auto")
+    }
+
+    pub fn render_function(&self, name: &str) -> String {
+        let mut params = Vec::new();
+
+        if let Some(title) = &self.title {
+            params.push(format!("  title: {}", title));
+        }
+
+        if let Some(target) = &self.target {
+            params.push(format!("  target: {}", target));
+        }
+
+        if let Some(indent) = &self.indent {
+            params.push(format!("  indent: {}", indent));
+        }
+
+        if let Some(depth) = self.depth {
+            params.push(format!("  depth: {}", depth));
+        }
+
+        if params.is_empty() {
+            format!("#let {name}() = outline()\n\n")
+        } else {
+            format!("#let {name}() = outline(\n{}\n)\n\n", params.join(",\n"))
+        }
+    }
 }
 
-fn figure_table_function() -> &'static str {
-    r#"#let figure_table() = {
-  let entries = query(selector: figure);
-
-  if entries.len() == 0 {
-    []
-  } else {
-    table(
-      columns: (auto, 1fr),
-      align: (right, left),
-      ..entries.map(entry => [
-        link(entry.location(), [entry.counter.display()])
-        entry.caption
-      ])
-    )
-  }
+fn contents_table_function() -> String {
+    Outline::table_of_contents().render_function("contents_table")
 }
 
-"#
+fn figure_table_function() -> String {
+    Outline::figure_list().render_function("figure_table")
 }
 
 fn typst_file_name(title: &str) -> String {
