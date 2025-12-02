@@ -10,7 +10,7 @@ pub use block::{
     TextOptions, bullets, code, figure, image, link_to_location, link_to_url, numbered, paragraph,
     raw, table, text, text_with_options,
 };
-pub use report::Report;
+pub use report::{Outline, Report};
 pub use section::Section;
 
 #[cfg(test)]
@@ -174,6 +174,7 @@ mod tests {
             .render();
 
         assert!(rendered.contains("#let figure_table()"));
+        assert!(rendered.contains("#let figure_table() = outline("));
         assert!(rendered.contains("= Table of Figures"));
         assert!(rendered.contains("#figure_table()"));
     }
@@ -189,8 +190,26 @@ mod tests {
             .render();
 
         assert!(rendered.contains("#let contents_table()"));
+        assert!(rendered.contains("#let contents_table() = outline("));
         assert!(rendered.contains("= Table of Contents"));
         assert!(rendered.contains("#contents_table()"));
+    }
+
+    #[test]
+    fn renders_configurable_outline_function() {
+        let outline = Outline::new()
+            .title("\"Custom Outline\"")
+            .target("heading.where(level <= 2)")
+            .indent("20pt")
+            .depth(3);
+
+        let rendered = outline.render_function("custom_outline");
+
+        assert!(rendered.contains("#let custom_outline() = outline("));
+        assert!(rendered.contains("  title: \"Custom Outline\""));
+        assert!(rendered.contains("  target: heading.where(level <= 2)"));
+        assert!(rendered.contains("  indent: 20pt"));
+        assert!(rendered.contains("  depth: 3"));
     }
 
     #[test]
