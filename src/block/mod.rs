@@ -12,7 +12,7 @@ pub use numbered_list::NumberedList;
 pub use paragraph::Paragraph;
 pub use raw::RawBlock;
 pub use table::TableBlock;
-pub use text::Text;
+pub use text::{Text, TextOptions};
 
 pub trait Block: std::fmt::Debug {
     fn render(&self, output: &mut String);
@@ -22,6 +22,10 @@ pub type BlockNode = Box<dyn Block>;
 
 pub fn text<T: Into<String>>(content: T) -> Text {
     Text::new(content)
+}
+
+pub fn text_with_options<T: Into<String>>(content: T, options: TextOptions) -> Text {
+    Text::with_options(content, options)
 }
 
 pub fn paragraph<T: Into<Text>>(text: T) -> BlockNode {

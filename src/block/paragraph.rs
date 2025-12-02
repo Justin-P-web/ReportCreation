@@ -17,7 +17,7 @@ impl Block for Paragraph {
     fn render(&self, output: &mut String) {
         use std::fmt::Write;
 
-        writeln!(output, "{}", self.content.trim()).expect("writing to string never fails");
+        writeln!(output, "{}", self.content.render()).expect("writing to string never fails");
         output.push('\n');
     }
 }
