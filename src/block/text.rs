@@ -91,7 +91,7 @@ impl Text {
     }
 
     pub fn weight<T: Into<String>>(mut self, weight: T) -> Self {
-        self.options.weight = Some(TextOptionValue::raw(weight));
+        self.options.weight = Some(TextOptionValue::str(weight));
         self
     }
 
@@ -276,7 +276,7 @@ impl TextOptions {
     }
 
     pub fn weight<T: Into<String>>(mut self, weight: T) -> Self {
-        self.weight = Some(TextOptionValue::raw(weight));
+        self.weight = Some(TextOptionValue::str(weight));
         self
     }
 
@@ -493,7 +493,7 @@ mod tests {
 
         assert_eq!(
             rendered,
-            "#text(\"Everything styled\", fill: green, lang: \"en\", size: 14pt, font: \"Helvetica\", style: italic, weight: semibold, tracking: 0.1em, stretch: 80%, variant: small-caps, baseline: subscript, underline: 0.5pt +blue, overline: double, line_through: dashed, outline: 0.5pt +gray, shadow: (1pt, 1pt), offset: (2pt, 3pt), rotate: 30deg, scale: 1.25, dir: ltr, writing_mode: vertical-rl, region: page, justification: center, align: middle, first_line_indent: 12pt, hanging_indent: 6pt, leading: 1.4em, spacing: 1.2em, parbreak: 0.5em)"
+            "#text(\"Everything styled\", fill: green, lang: \"en\", size: 14pt, font: \"Helvetica\", style: italic, weight: \"semibold\", tracking: 0.1em, stretch: 80%, variant: small-caps, baseline: subscript, underline: 0.5pt +blue, overline: double, line_through: dashed, outline: 0.5pt +gray, shadow: (1pt, 1pt), offset: (2pt, 3pt), rotate: 30deg, scale: 1.25, dir: ltr, writing_mode: vertical-rl, region: page, justification: center, align: middle, first_line_indent: 12pt, hanging_indent: 6pt, leading: 1.4em, spacing: 1.2em, parbreak: 0.5em)"
         );
     }
 
@@ -532,7 +532,7 @@ mod tests {
 
         assert_eq!(
             rendered,
-            "#text(\"Builder syntax\", fill: green, lang: \"en\", size: 14pt, font: \"Helvetica\", style: italic, weight: semibold, tracking: 0.1em, stretch: 80%, variant: small-caps, baseline: subscript, underline: 0.5pt +blue, overline: double, line_through: dashed, outline: 0.5pt +gray, shadow: (1pt, 1pt), offset: (2pt, 3pt), rotate: 30deg, scale: 1.25, dir: ltr, writing_mode: vertical-rl, region: page, justification: center, align: middle, first_line_indent: 12pt, hanging_indent: 6pt, leading: 1.4em, spacing: 1.2em, parbreak: 0.5em)"
+            "#text(\"Builder syntax\", fill: green, lang: \"en\", size: 14pt, font: \"Helvetica\", style: italic, weight: \"semibold\", tracking: 0.1em, stretch: 80%, variant: small-caps, baseline: subscript, underline: 0.5pt +blue, overline: double, line_through: dashed, outline: 0.5pt +gray, shadow: (1pt, 1pt), offset: (2pt, 3pt), rotate: 30deg, scale: 1.25, dir: ltr, writing_mode: vertical-rl, region: page, justification: center, align: middle, first_line_indent: 12pt, hanging_indent: 6pt, leading: 1.4em, spacing: 1.2em, parbreak: 0.5em)"
         );
     }
 }
