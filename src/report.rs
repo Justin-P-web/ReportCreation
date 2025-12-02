@@ -6,7 +6,11 @@ use std::{
 
 use time::{OffsetDateTime, UtcOffset};
 
-use crate::{block::BlockNode, render::render_blocks, section::Section};
+use crate::{
+    block::{paragraph, BlockNode},
+    render::render_blocks,
+    section::Section,
+};
 use comemo::Prehashed;
 use typst::{
     Library, World, compile,
@@ -19,14 +23,50 @@ use typst::{
 use typst_assets::fonts;
 use typst_pdf::pdf;
 
+/// Represents a page-level section, such as a header or footer, composed of
+/// reusable blocks.
+#[derive(Debug, Default)]
+pub struct PageSection {
+    blocks: Vec<BlockNode>,
+}
+
+impl PageSection {
+    /// Create a new, empty page section.
+    pub fn new() -> Self {
+        Self { blocks: Vec::new() }
+    }
+
+    /// Add a block to the section.
+    pub fn add_block(mut self, block: BlockNode) -> Self {
+        self.blocks.push(block);
+        self
+    }
+
+    fn blocks(&self) -> &[BlockNode] {
+        &self.blocks
+    }
+}
+
+impl From<&str> for PageSection {
+    fn from(value: &str) -> Self {
+        Self::from(value.to_string())
+    }
+}
+
+impl From<String> for PageSection {
+    fn from(value: String) -> Self {
+        PageSection::new().add_block(paragraph(value))
+    }
+}
+
 /// Represents a report composed of structured sections and blocks that can be
 /// rendered to Typst markup.
 #[derive(Debug, Default)]
 pub struct Report {
     title: String,
     author: Option<String>,
-    header: Option<String>,
-    footer: Option<String>,
+    header: Option<PageSection>,
+    footer: Option<PageSection>,
     include_outline: bool,
     include_contents_table: bool,
     include_figure_table: bool,
@@ -65,13 +105,13 @@ impl Report {
     }
 
     /// Configure a page header for the report.
-    pub fn header<T: Into<String>>(mut self, header: T) -> Self {
+    pub fn header<T: Into<PageSection>>(mut self, header: T) -> Self {
         self.header = Some(header.into());
         self
     }
 
     /// Configure a page footer for the report.
-    pub fn footer<T: Into<String>>(mut self, footer: T) -> Self {
+    pub fn footer<T: Into<PageSection>>(mut self, footer: T) -> Self {
         self.footer = Some(footer.into());
         self
     }
@@ -165,7 +205,7 @@ impl Report {
             writeln!(
                 output,
                 "#set page({})",
-                render_page(self.header.as_deref(), self.footer.as_deref())
+                render_page(self.header.as_ref(), self.footer.as_ref())
             )
             .expect("writing to string never fails");
         }
@@ -210,28 +250,25 @@ fn render_author(author: Option<&str>) -> String {
     }
 }
 
-fn render_page(header: Option<&str>, footer: Option<&str>) -> String {
+fn render_page(header: Option<&PageSection>, footer: Option<&PageSection>) -> String {
     let mut parts = Vec::new();
 
     if let Some(header_content) = header {
-        parts.push(format!(
-            "header: \"{}\"",
-            escape_typst_string(header_content)
-        ));
+        parts.push(format!("header: {}", render_page_section(header_content)));
     }
 
     if let Some(footer_content) = footer {
-        parts.push(format!(
-            "footer: \"{}\"",
-            escape_typst_string(footer_content)
-        ));
+        parts.push(format!("footer: {}", render_page_section(footer_content)));
     }
 
     parts.join(", ")
 }
 
-fn escape_typst_string(raw: &str) -> String {
-    raw.replace('\\', "\\\\").replace('"', "\\\"")
+fn render_page_section(section: &PageSection) -> String {
+    let mut body = String::new();
+    render_blocks(&mut body, section.blocks(), 0);
+
+    format!("section(body: [{}])", body.trim())
 }
 
 #[derive(Debug, Clone, Default)]

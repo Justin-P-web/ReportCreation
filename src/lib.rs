@@ -10,7 +10,7 @@ pub use block::{
     TextOptions, bullets, code, figure, image, link_to_location, link_to_url, numbered, paragraph,
     raw, table, text, text_with_options,
 };
-pub use report::{Outline, Report};
+pub use report::{Outline, PageSection, Report};
 pub use section::Section;
 
 #[cfg(test)]
@@ -103,8 +103,27 @@ mod tests {
         let rendered = report.render();
 
         assert!(rendered.contains(
-            "#set page(header: \"Company Report\", footer: \"Page {{page()}} of {{pages()}}\")"
+            "#set page(header: section(body: [Company Report]), footer: section(body: [Page {{page()}} of {{pages()}}]))"
         ));
+    }
+
+    #[test]
+    fn renders_header_and_footer_sections_from_blocks() {
+        let _guard = DirGuard::in_temp("renders_header_and_footer_sections_from_blocks");
+
+        let header_section =
+            PageSection::new().add_block(paragraph("Branded"));
+        let footer_section =
+            PageSection::new().add_block(paragraph("Confidential"));
+
+        let rendered = Report::new("Detailed Report")
+            .header(header_section)
+            .footer(footer_section)
+            .add_section(Section::new("Content"))
+            .render();
+
+        assert!(rendered.contains("header: section(body: [Branded])"));
+        assert!(rendered.contains("footer: section(body: [Confidential])"));
     }
 
     #[test]
@@ -388,7 +407,7 @@ mod tests {
         );
         assert!(
             rendered
-                .contains("#set page(header: \"Universal Header\", footer: \"Universal Footer\")",)
+                .contains("#set page(header: section(body: [Universal Header]), footer: section(body: [Universal Footer]))",)
         );
         assert!(rendered.contains("#outline()"));
         assert!(rendered.contains("= Table of Contents"));

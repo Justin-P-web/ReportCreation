@@ -68,7 +68,9 @@ You can disable the outline with `Report::with_outline(false)`, add reusable pag
 chrome with `Report::header` and `Report::footer`, add a table of contents with
 `Report::with_contents_table(true)`, include a table of figures via
 `Report::with_figure_table(true)`, and add nested subsections with
-`Section::add_subsection`.
+`Section::add_subsection`. Headers and footers accept a `PageSection` built from
+blocks (strings are automatically wrapped in a paragraph), so you can stitch
+together richer page chrome.
 
 ## Blocks
 
