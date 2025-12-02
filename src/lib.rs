@@ -6,8 +6,8 @@ mod section;
 #[cfg(feature = "polars")]
 pub use block::from_polars_dataframe;
 pub use block::{
-    Block, BlockNode, Text, TextOptions, bullets, code, numbered, paragraph, raw, table, text,
-    text_with_options,
+    Block, BlockNode, Image, ImageOptions, Text, TextOptions, bullets, code, image, numbered,
+    paragraph, raw, table, text, text_with_options,
 };
 pub use report::Report;
 pub use section::Section;
@@ -116,6 +116,25 @@ mod tests {
         let rendered = report.render();
 
         assert!(rendered.contains("```rust\nfn main() {}\n```"));
+    }
+
+    #[test]
+    fn renders_image_block() {
+        let _guard = DirGuard::in_temp("renders_image_block");
+
+        let rendered = Report::new("Gallery")
+            .add_section(
+                Section::new("Images").add_block(image(
+                    Image::new("./diagram.svg")
+                        .alt("System diagram")
+                        .width("60%"),
+                )),
+            )
+            .render();
+
+        assert!(
+            rendered.contains("#image(\"./diagram.svg\", alt: \"System diagram\", width: 60%)",)
+        );
     }
 
     #[test]
