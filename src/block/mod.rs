@@ -1,5 +1,6 @@
 mod bullet_list;
 mod code;
+mod image;
 mod numbered_list;
 mod paragraph;
 mod raw;
@@ -8,6 +9,7 @@ mod text;
 
 pub use bullet_list::BulletList;
 pub use code::CodeBlock;
+pub use image::{Image, ImageOptions};
 pub use numbered_list::NumberedList;
 pub use paragraph::Paragraph;
 pub use raw::RawBlock;
@@ -42,6 +44,10 @@ pub fn numbered<T: Into<String>>(items: impl IntoIterator<Item = T>) -> BlockNod
 
 pub fn code<T: Into<String>>(language: Option<T>, content: T) -> BlockNode {
     Box::new(CodeBlock::new(language.map(Into::into), content.into()))
+}
+
+pub fn image<I: Into<Image>>(image: I) -> BlockNode {
+    Box::new(image.into())
 }
 
 pub fn table<H, R, C>(
