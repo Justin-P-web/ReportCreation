@@ -159,6 +159,26 @@ mod tests {
     }
 
     #[test]
+    fn renders_table_of_figures_when_enabled() {
+        let _guard = DirGuard::in_temp("renders_table_of_figures_when_enabled");
+
+        let rendered = Report::new("With figures")
+            .with_figure_table(true)
+            .add_section(
+                Section::new("Illustrations").add_block(
+                    figure(Image::new("./figure.png").width("50%"))
+                        .caption("Sample figure")
+                        .into(),
+                ),
+            )
+            .render();
+
+        assert!(rendered.contains("#let figure_table()"));
+        assert!(rendered.contains("= Table of Figures"));
+        assert!(rendered.contains("#figure_table()"));
+    }
+
+    #[test]
     fn validated_render_surfaces_syntax_errors() {
         let invalid_report =
             Report::new("Broken").add_section(Section::new("Faulty").add_block(raw("[#unclosed(")));

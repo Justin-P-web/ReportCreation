@@ -28,6 +28,7 @@ pub struct Report {
     header: Option<String>,
     footer: Option<String>,
     include_outline: bool,
+    include_figure_table: bool,
     generate_pdf: bool,
     sections: Vec<Section>,
     front_matter: Vec<BlockNode>,
@@ -42,6 +43,7 @@ impl Report {
             header: None,
             footer: None,
             include_outline: true,
+            include_figure_table: false,
             generate_pdf: false,
             sections: Vec::new(),
             front_matter: Vec::new(),
@@ -76,6 +78,13 @@ impl Report {
     /// rendered Typst document. Defaults to `true`.
     pub fn with_outline(mut self, include_outline: bool) -> Self {
         self.include_outline = include_outline;
+        self
+    }
+
+    /// Configure whether a table of figures should be included after the
+    /// outline. Defaults to `false`.
+    pub fn with_figure_table(mut self, include_figure_table: bool) -> Self {
+        self.include_figure_table = include_figure_table;
         self
     }
 
@@ -140,6 +149,8 @@ impl Report {
         )
         .expect("writing to string never fails");
 
+        output.push_str(figure_table_function());
+
         if self.header.is_some() || self.footer.is_some() {
             writeln!(
                 output,
@@ -153,6 +164,11 @@ impl Report {
 
         if self.include_outline {
             output.push_str("#outline()\n\n");
+        }
+
+        if self.include_figure_table {
+            writeln!(output, "= Table of Figures").expect("writing to string never fails");
+            output.push_str("#figure_table()\n\n");
         }
 
         render_blocks(&mut output, &self.front_matter, 0);
@@ -201,6 +217,27 @@ fn render_page(header: Option<&str>, footer: Option<&str>) -> String {
 
 fn escape_typst_string(raw: &str) -> String {
     raw.replace('\\', "\\\\").replace('"', "\\\"")
+}
+
+fn figure_table_function() -> &'static str {
+    r#"#let figure_table() = {
+  let entries = query(selector: figure);
+
+  if entries.len() == 0 {
+    []
+  } else {
+    table(
+      columns: (auto, 1fr),
+      align: (right, left),
+      ..entries.map(entry => [
+        link(entry.location(), [entry.counter.display()])
+        entry.caption
+      ])
+    )
+  }
+}
+
+"#
 }
 
 fn typst_file_name(title: &str) -> String {
