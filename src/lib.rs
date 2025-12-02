@@ -179,6 +179,21 @@ mod tests {
     }
 
     #[test]
+    fn renders_table_of_contents_when_enabled() {
+        let _guard = DirGuard::in_temp("renders_table_of_contents_when_enabled");
+
+        let rendered = Report::new("With sections")
+            .with_contents_table(true)
+            .add_section(Section::new("First"))
+            .add_section(Section::new("Second"))
+            .render();
+
+        assert!(rendered.contains("#let contents_table()"));
+        assert!(rendered.contains("= Table of Contents"));
+        assert!(rendered.contains("#contents_table()"));
+    }
+
+    #[test]
     fn validated_render_surfaces_syntax_errors() {
         let invalid_report =
             Report::new("Broken").add_section(Section::new("Faulty").add_block(raw("[#unclosed(")));

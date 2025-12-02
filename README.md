@@ -46,8 +46,10 @@ println!("{}", document);
 The rendered Typst document includes a `#set document(..)` declaration, an
 outline by default, nested section headings, and the blocks you composed. You
 can disable the outline with `Report::with_outline(false)`, add reusable page
-chrome with `Report::header` and `Report::footer`, and add nested subsections
-with `Section::add_subsection`.
+chrome with `Report::header` and `Report::footer`, add a table of contents with
+`Report::with_contents_table(true)`, include a table of figures via
+`Report::with_figure_table(true)`, and add nested subsections with
+`Section::add_subsection`.
 
 ## Turning Polars DataFrames into Typst tables
 
