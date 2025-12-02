@@ -452,3 +452,87 @@ impl std::fmt::Display for TextOptionValue {
 fn escape_str(value: &str) -> String {
     value.replace('\\', "\\\\").replace('"', "\\\"")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn renders_all_text_options_with_text_options_builder() {
+        let options = TextOptions::default()
+            .fill("green")
+            .lang("en")
+            .size("14pt")
+            .font("Helvetica")
+            .style("italic")
+            .weight("semibold")
+            .tracking("0.1em")
+            .stretch("80%")
+            .variant("small-caps")
+            .baseline("subscript")
+            .underline("0.5pt +blue")
+            .overline("double")
+            .line_through("dashed")
+            .outline("0.5pt +gray")
+            .shadow("(1pt, 1pt)")
+            .offset("(2pt, 3pt)")
+            .rotate("30deg")
+            .scale("1.25")
+            .dir("ltr")
+            .writing_mode("vertical-rl")
+            .region("page")
+            .justification("center")
+            .align("middle")
+            .first_line_indent("12pt")
+            .hanging_indent("6pt")
+            .leading("1.4em")
+            .spacing("1.2em")
+            .parbreak("0.5em");
+
+        let rendered = Text::with_options("Everything styled", options).render();
+
+        assert_eq!(
+            rendered,
+            "#text(\"Everything styled\", fill: green, lang: \"en\", size: 14pt, font: \"Helvetica\", style: italic, weight: semibold, tracking: 0.1em, stretch: 80%, variant: small-caps, baseline: subscript, underline: 0.5pt +blue, overline: double, line_through: dashed, outline: 0.5pt +gray, shadow: (1pt, 1pt), offset: (2pt, 3pt), rotate: 30deg, scale: 1.25, dir: ltr, writing_mode: vertical-rl, region: page, justification: center, align: middle, first_line_indent: 12pt, hanging_indent: 6pt, leading: 1.4em, spacing: 1.2em, parbreak: 0.5em)"
+        );
+    }
+
+    #[test]
+    fn renders_all_text_options_with_text_builder_methods() {
+        let rendered = Text::new("Builder syntax")
+            .fill("green")
+            .lang("en")
+            .size("14pt")
+            .font("Helvetica")
+            .style("italic")
+            .weight("semibold")
+            .tracking("0.1em")
+            .stretch("80%")
+            .variant("small-caps")
+            .baseline("subscript")
+            .underline("0.5pt +blue")
+            .overline("double")
+            .line_through("dashed")
+            .outline("0.5pt +gray")
+            .shadow("(1pt, 1pt)")
+            .offset("(2pt, 3pt)")
+            .rotate("30deg")
+            .scale("1.25")
+            .dir("ltr")
+            .writing_mode("vertical-rl")
+            .region("page")
+            .justification("center")
+            .align("middle")
+            .first_line_indent("12pt")
+            .hanging_indent("6pt")
+            .leading("1.4em")
+            .spacing("1.2em")
+            .parbreak("0.5em")
+            .render();
+
+        assert_eq!(
+            rendered,
+            "#text(\"Builder syntax\", fill: green, lang: \"en\", size: 14pt, font: \"Helvetica\", style: italic, weight: semibold, tracking: 0.1em, stretch: 80%, variant: small-caps, baseline: subscript, underline: 0.5pt +blue, overline: double, line_through: dashed, outline: 0.5pt +gray, shadow: (1pt, 1pt), offset: (2pt, 3pt), rotate: 30deg, scale: 1.25, dir: ltr, writing_mode: vertical-rl, region: page, justification: center, align: middle, first_line_indent: 12pt, hanging_indent: 6pt, leading: 1.4em, spacing: 1.2em, parbreak: 0.5em)"
+        );
+    }
+}
