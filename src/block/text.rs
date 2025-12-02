@@ -449,7 +449,7 @@ impl std::fmt::Display for TextOptionValue {
     }
 }
 
-fn escape_str(value: &str) -> String {
+pub(crate) fn escape_str(value: &str) -> String {
     value.replace('\\', "\\\\").replace('"', "\\\"")
 }
 

@@ -2,6 +2,7 @@ mod bullet_list;
 mod code;
 mod figure;
 mod image;
+mod link;
 mod numbered_list;
 mod paragraph;
 mod raw;
@@ -12,6 +13,7 @@ pub use bullet_list::BulletList;
 pub use code::CodeBlock;
 pub use figure::{Figure, FigureBody, FigureKind};
 pub use image::{Image, ImageOptions};
+pub use link::{Link, LinkDestination};
 pub use numbered_list::NumberedList;
 pub use paragraph::Paragraph;
 pub use raw::RawBlock;
@@ -54,6 +56,14 @@ pub fn image<I: Into<Image>>(image: I) -> BlockNode {
 
 pub fn figure(body: impl Into<FigureBody>) -> Figure {
     Figure::new(body)
+}
+
+pub fn link_to_url<C: Into<Text>, U: Into<String>>(url: U, content: C) -> BlockNode {
+    Box::new(Link::to_url(url, content))
+}
+
+pub fn link_to_location<C: Into<Text>, L: Into<String>>(location: L, content: C) -> BlockNode {
+    Box::new(Link::to_location(location, content))
 }
 
 pub fn table<H, R, C>(
