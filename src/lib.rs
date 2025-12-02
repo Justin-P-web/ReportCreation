@@ -6,8 +6,8 @@ mod section;
 #[cfg(feature = "polars")]
 pub use block::from_polars_dataframe;
 pub use block::{
-    Block, BlockNode, Image, ImageOptions, Text, TextOptions, bullets, code, image, numbered,
-    paragraph, raw, table, text, text_with_options,
+    Block, BlockNode, Figure, FigureKind, Image, ImageOptions, Text, TextOptions, bullets, code,
+    figure, image, numbered, paragraph, raw, table, text, text_with_options,
 };
 pub use report::Report;
 pub use section::Section;
@@ -135,6 +135,26 @@ mod tests {
         assert!(
             rendered.contains("#image(\"./diagram.svg\", alt: \"System diagram\", width: 60%)",)
         );
+    }
+
+    #[test]
+    fn renders_figure_block() {
+        let _guard = DirGuard::in_temp("renders_figure_block");
+
+        let rendered = Report::new("Findings")
+            .add_section(
+                Section::new("Results").add_block(
+                    figure(Image::new("./chart.svg").width("75%"))
+                        .caption("Figure 1")
+                        .kind(FigureKind::Image)
+                        .into(),
+                ),
+            )
+            .render();
+
+        assert!(rendered.contains(
+            "#figure(image(\"./chart.svg\", width: 75%), caption: [Figure 1], kind: image)",
+        ));
     }
 
     #[test]

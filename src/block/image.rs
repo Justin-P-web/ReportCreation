@@ -83,20 +83,35 @@ impl Image {
         self.options.invert = Some(ImageOptionValue::Bool(invert));
         self
     }
-}
 
-impl Block for Image {
-    fn render(&self, output: &mut String) {
+    pub(crate) fn render_markup(&self, include_hash: bool) -> String {
+        let mut output = String::new();
+        self.write_markup(&mut output, include_hash);
+        output
+    }
+
+    fn write_markup(&self, output: &mut String, include_hash: bool) {
         use std::fmt::Write;
 
-        write!(output, "#image(\"{}\"", escape_str(self.path.trim()))
+        if include_hash {
+            output.push('#');
+        }
+
+        write!(output, "image(\"{}\"", escape_str(self.path.trim()))
             .expect("writing to string never fails");
 
         for option in self.options.iter() {
             write!(output, ", {}", option).expect("writing to string never fails");
         }
 
-        writeln!(output, ")").expect("writing to string never fails");
+        output.push(')');
+    }
+}
+
+impl Block for Image {
+    fn render(&self, output: &mut String) {
+        self.write_markup(output, true);
+        output.push('\n');
         output.push('\n');
     }
 }
