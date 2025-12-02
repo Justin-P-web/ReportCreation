@@ -294,4 +294,94 @@ mod tests {
             "#text(\"Configurable\", lang: \"en\", justification: left, leading: 1.4em)",
         ));
     }
+
+    #[test]
+    fn mixes_lists_tables_links_and_code() {
+        let _guard = DirGuard::in_temp("mixes_lists_tables_links_and_code");
+
+        let rendered = Report::new("Mixed Blocks")
+            .add_section(
+                Section::new("Combo")
+                    .add_block(paragraph("Intro block"))
+                    .add_block(bullets(["Bullet one", "Bullet two"]))
+                    .add_block(numbered(["First numbered", "Second numbered"]))
+                    .add_block(table(
+                        vec!["Col A".to_string(), "Col B".to_string()],
+                        vec![vec!["A1".to_string(), "B1".to_string()]],
+                    ))
+                    .add_block(code(None::<&str>, "plain code"))
+                    .add_block(link_to_url("https://example.com", text("Example link")))
+                    .add_block(link_to_location("combo_location", text("Jump to combo")))
+                    .add_block(raw("#let combo_location = here()"))
+                    .add_block(raw("#set text(12pt)")),
+            )
+            .render();
+
+        assert!(rendered.contains("- Bullet one"));
+        assert!(rendered.contains("+ First numbered"));
+        assert!(rendered.contains("#table"));
+        assert!(rendered.contains("```typst"));
+        assert!(rendered.contains("#link(target: \"https://example.com\")[Example link]"));
+        assert!(rendered.contains("#link(location: combo_location)[Jump to combo]"));
+        assert!(rendered.contains("#let combo_location = here()"));
+        assert!(rendered.contains("#set text(12pt)"));
+    }
+
+    #[test]
+    fn renders_report_with_everything_enabled() {
+        let _guard = DirGuard::in_temp("renders_report_with_everything_enabled");
+
+        let rendered = Report::new("Everything Everywhere")
+            .author("Every Tester")
+            .header("Universal Header")
+            .footer("Universal Footer")
+            .with_outline(true)
+            .with_contents_table(true)
+            .with_figure_table(true)
+            .add_front_matter(paragraph(text("Front matter").fill("blue")))
+            .add_section(
+                Section::new("Overview")
+                    .add_block(paragraph("Overview body."))
+                    .add_block(bullets(["Item A", "Item B"]))
+                    .add_block(numbered(["Step 1", "Step 2"]))
+                    .add_block(table(
+                        vec!["Key".to_string(), "Value".to_string()],
+                        vec![vec!["X".to_string(), "Y".to_string()]],
+                    ))
+                    .add_block(link_to_url("https://docs.example.com", text("Docs")))
+                    .add_subsection(
+                        Section::new("Details")
+                            .add_block(code(Some("bash"), "echo details"))
+                            .add_block(
+                                figure(Image::new("./diagram.svg").width("80%"))
+                                    .caption("Everything diagram")
+                                    .kind(FigureKind::Image)
+                                    .into(),
+                            ),
+                    ),
+            )
+            .render();
+
+        assert!(
+            rendered.contains(
+                "#set document(title: \"Everything Everywhere\", author: \"Every Tester\"",
+            )
+        );
+        assert!(
+            rendered
+                .contains("#set page(header: \"Universal Header\", footer: \"Universal Footer\")",)
+        );
+        assert!(rendered.contains("#outline()"));
+        assert!(rendered.contains("= Table of Contents"));
+        assert!(rendered.contains("#contents_table()"));
+        assert!(rendered.contains("= Table of Figures"));
+        assert!(rendered.contains("#figure_table()"));
+        assert!(rendered.contains("Front matter"));
+        assert!(rendered.contains("= Overview"));
+        assert!(rendered.contains("+ Step 1"));
+        assert!(rendered.contains("#link(target: \"https://docs.example.com\")[Docs]"));
+        assert!(rendered.contains(
+            "#figure(image(\"./diagram.svg\", width: 80%), caption: [Everything diagram], kind: image)",
+        ));
+    }
 }
