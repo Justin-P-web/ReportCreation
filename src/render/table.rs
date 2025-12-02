@@ -1,11 +1,14 @@
 use std::fmt::Write;
 
-pub(crate) fn render_table(output: &mut String, headers: &[String], rows: &[Vec<String>]) {
+pub(crate) fn table_markup(headers: &[String], rows: &[Vec<String>], include_hash: bool) -> String {
+    let mut output = String::new();
     let column_spec = std::iter::repeat("(flex: 1,)")
         .take(headers.len())
         .collect::<Vec<_>>()
         .join(", ");
-    writeln!(output, "#table(columns: ({}))[", column_spec).expect("writing to string never fails");
+    let prefix = if include_hash { "#table" } else { "table" };
+    writeln!(output, "{}(columns: ({}))[", prefix, column_spec)
+        .expect("writing to string never fails");
     output.push_str("  [");
     for (idx, header) in headers.iter().enumerate() {
         if idx > 0 {
@@ -27,4 +30,5 @@ pub(crate) fn render_table(output: &mut String, headers: &[String], rows: &[Vec<
     }
 
     output.push_str("]\n");
+    output
 }

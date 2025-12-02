@@ -1,5 +1,6 @@
 mod bullet_list;
 mod code;
+mod figure;
 mod image;
 mod numbered_list;
 mod paragraph;
@@ -9,6 +10,7 @@ mod text;
 
 pub use bullet_list::BulletList;
 pub use code::CodeBlock;
+pub use figure::{Figure, FigureBody, FigureKind};
 pub use image::{Image, ImageOptions};
 pub use numbered_list::NumberedList;
 pub use paragraph::Paragraph;
@@ -48,6 +50,10 @@ pub fn code<T: Into<String>>(language: Option<T>, content: T) -> BlockNode {
 
 pub fn image<I: Into<Image>>(image: I) -> BlockNode {
     Box::new(image.into())
+}
+
+pub fn figure(body: impl Into<FigureBody>) -> Figure {
+    Figure::new(body)
 }
 
 pub fn table<H, R, C>(

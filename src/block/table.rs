@@ -1,6 +1,6 @@
 use super::Block;
 
-use crate::render::table::render_table;
+use crate::render::table::table_markup;
 
 #[derive(Debug, Clone)]
 pub struct TableBlock {
@@ -53,7 +53,13 @@ impl TableBlock {
 
 impl Block for TableBlock {
     fn render(&self, output: &mut String) {
-        render_table(output, &self.headers, &self.rows);
+        output.push_str(&self.render_markup(true));
         output.push('\n');
+    }
+}
+
+impl TableBlock {
+    pub(crate) fn render_markup(&self, include_hash: bool) -> String {
+        table_markup(&self.headers, &self.rows, include_hash)
     }
 }
