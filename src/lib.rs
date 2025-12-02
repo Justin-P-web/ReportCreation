@@ -5,7 +5,10 @@ mod section;
 
 #[cfg(feature = "polars")]
 pub use block::from_polars_dataframe;
-pub use block::{Block, BlockNode, Text, bullets, code, numbered, paragraph, raw, table, text};
+pub use block::{
+    Block, BlockNode, Text, TextOptions, bullets, code, numbered, paragraph, raw, table, text,
+    text_with_options,
+};
 pub use report::Report;
 pub use section::Section;
 
@@ -179,5 +182,41 @@ mod tests {
 
         let expected = "Shared content\n\n";
         assert!(rendered.match_indices(expected).count() >= 2);
+    }
+
+    #[test]
+    fn renders_formatted_text() {
+        let styled = text("Look at me!")
+            .fill("red")
+            .size("16pt")
+            .font("Inter")
+            .weight("bold");
+
+        let rendered = Report::new("Style Guide")
+            .add_section(Section::new("Body").add_block(paragraph(styled)))
+            .render();
+
+        assert!(rendered.contains(
+            "#text(\"Look at me!\", fill: red, size: 16pt, font: \"Inter\", weight: bold)",
+        ));
+    }
+
+    #[test]
+    fn accepts_options_struct_for_text() {
+        let options = TextOptions::default()
+            .lang("en")
+            .justification("left")
+            .leading("1.4em");
+
+        let rendered = Report::new("Options")
+            .add_section(
+                Section::new("Body")
+                    .add_block(paragraph(text_with_options("Configurable", options))),
+            )
+            .render();
+
+        assert!(rendered.contains(
+            "#text(\"Configurable\", lang: \"en\", justification: left, leading: 1.4em)",
+        ));
     }
 }
