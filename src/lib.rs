@@ -5,7 +5,7 @@ mod section;
 
 #[cfg(feature = "polars")]
 pub use block::from_polars_dataframe;
-pub use block::{Block, BlockNode, bullets, code, numbered, paragraph, raw, table};
+pub use block::{Block, BlockNode, Text, bullets, code, numbered, paragraph, raw, table, text};
 pub use report::Report;
 pub use section::Section;
 
@@ -163,5 +163,21 @@ mod tests {
 
         let pdf_bytes = fs::read(pdf_path).expect("PDF should be written");
         assert!(!pdf_bytes.is_empty());
+    }
+
+    #[test]
+    fn paragraphs_accept_text_objects() {
+        let shared_text = text("Shared content");
+
+        let rendered = Report::new("Shared Text")
+            .add_section(
+                Section::new("Body")
+                    .add_block(paragraph(shared_text.clone()))
+                    .add_block(paragraph(shared_text)),
+            )
+            .render();
+
+        let expected = "Shared content\n\n";
+        assert!(rendered.match_indices(expected).count() >= 2);
     }
 }
