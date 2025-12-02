@@ -4,6 +4,7 @@ mod numbered_list;
 mod paragraph;
 mod raw;
 mod table;
+mod text;
 
 pub use bullet_list::BulletList;
 pub use code::CodeBlock;
@@ -11,6 +12,7 @@ pub use numbered_list::NumberedList;
 pub use paragraph::Paragraph;
 pub use raw::RawBlock;
 pub use table::TableBlock;
+pub use text::Text;
 
 pub trait Block: std::fmt::Debug {
     fn render(&self, output: &mut String);
@@ -18,7 +20,11 @@ pub trait Block: std::fmt::Debug {
 
 pub type BlockNode = Box<dyn Block>;
 
-pub fn paragraph<T: Into<String>>(text: T) -> BlockNode {
+pub fn text<T: Into<String>>(content: T) -> Text {
+    Text::new(content)
+}
+
+pub fn paragraph<T: Into<Text>>(text: T) -> BlockNode {
     Box::new(Paragraph::new(text))
 }
 

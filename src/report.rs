@@ -1,4 +1,8 @@
-use std::{fmt::Write, fs, path::{Path, PathBuf}};
+use std::{
+    fmt::Write,
+    fs,
+    path::{Path, PathBuf},
+};
 
 use time::{OffsetDateTime, UtcOffset};
 
@@ -104,7 +108,11 @@ impl Report {
             .join(&file_name);
 
         fs::write(&file_path, &rendered).unwrap_or_else(|err| {
-            panic!("failed to write Typst output to {}: {}", file_path.display(), err)
+            panic!(
+                "failed to write Typst output to {}: {}",
+                file_path.display(),
+                err
+            )
         });
 
         if self.generate_pdf {

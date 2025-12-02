@@ -1,12 +1,12 @@
-use super::Block;
+use super::{Block, Text};
 
 #[derive(Debug, Clone)]
 pub struct Paragraph {
-    content: String,
+    content: Text,
 }
 
 impl Paragraph {
-    pub fn new<T: Into<String>>(content: T) -> Self {
+    pub fn new<T: Into<Text>>(content: T) -> Self {
         Self {
             content: content.into(),
         }
