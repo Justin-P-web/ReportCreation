@@ -291,7 +291,7 @@ mod tests {
             .render();
 
         assert!(rendered.contains(
-            "#text(\"Look at me!\", fill: red, size: 16pt, font: \"Inter\", weight: bold)",
+            "#text(\"Look at me!\", fill: red, size: 16pt, font: \"Inter\", weight: \"bold\")",
         ));
     }
 
