@@ -6,8 +6,9 @@ mod section;
 #[cfg(feature = "polars")]
 pub use block::from_polars_dataframe;
 pub use block::{
-    Block, BlockNode, Figure, FigureKind, Image, ImageOptions, Text, TextOptions, bullets, code,
-    figure, image, numbered, paragraph, raw, table, text, text_with_options,
+    Block, BlockNode, Figure, FigureKind, Image, ImageOptions, Link, LinkDestination, Text,
+    TextOptions, bullets, code, figure, image, link_to_location, link_to_url, numbered, paragraph,
+    raw, table, text, text_with_options,
 };
 pub use report::Report;
 pub use section::Section;
