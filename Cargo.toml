@@ -14,3 +14,8 @@ comemo = "0.4"
 polars = { version = "0.44.2", optional = true, default-features = false, features = ["fmt"] }
 time = { version = "0.3.20", features = ["local-offset"] }
 clap = { version = "4.5", features = ["derive"] }
+
+[dev-dependencies]
+assert_cmd = "2.0"
+predicates = "3.1"
+tempfile = "3.10"
