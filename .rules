@@ -1,0 +1,6 @@
+# AI Contribution Rules
+
+- Write comprehensive unit tests for all functionality using the Arrange-Act-Assert pattern to clarify setup, execution, and verification.
+- Document every function (public and private) following standard Rust documentation guidelines, including clear examples and explanations of arguments, return values, and potential errors.
+- Follow idiomatic Rust coding practices: favor clear ownership and borrowing semantics, meaningful naming, small focused functions, and distribution of responsibilities across appropriate modules.
+- Keep code maintainable by avoiding unnecessary complexity, preferring explicitness over magic, and ensuring responsibilities are well-separated.
