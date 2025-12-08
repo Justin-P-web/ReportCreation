@@ -51,3 +51,23 @@ fn honors_custom_output_path() {
 
     assert!(fs::metadata(&custom_output).is_ok(), "custom pdf should exist");
 }
+
+#[test]
+fn accepts_relative_input_path() {
+    let temp_dir = tempdir().expect("tempdir should be created");
+    let input_path = write_typst_fixture(temp_dir.path());
+    let relative_input = input_path
+        .strip_prefix(temp_dir.path())
+        .expect("input should be within temp dir");
+    let relative_output = relative_input.with_extension("pdf");
+    let expected_output = temp_dir.path().join(&relative_output);
+
+    Command::new(assert_cmd::cargo::cargo_bin!("report_creation"))
+        .current_dir(temp_dir.path())
+        .arg(relative_input)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(relative_output.display().to_string()));
+
+    assert!(fs::metadata(&expected_output).is_ok(), "pdf should be written");
+}
