@@ -533,6 +533,13 @@ pub fn compile_pdf(source: &str, main_path: &Path) -> Vec<u8> {
             .join(main_path)
     };
 
+    // Normalize the entrypoint path so that the Typst compiler resolves imports
+    // relative to the actual location of the input file, even when callers pass
+    // a path containing relative segments like "../".
+    let main_path = main_path
+        .canonicalize()
+        .unwrap_or(main_path);
+
     let world = InMemoryWorld::new(source.to_string(), main_path);
     let mut tracer = Tracer::new();
     let document = compile(&world, &mut tracer)
