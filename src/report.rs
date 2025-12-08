@@ -490,7 +490,9 @@ impl World for InMemoryWorld {
     }
 }
 
-fn compile_pdf(source: &str, main_path: &Path) -> Vec<u8> {
+/// Compile Typst source into a PDF using the given file path as the Typst
+/// entrypoint.
+pub fn compile_pdf(source: &str, main_path: &Path) -> Vec<u8> {
     let world = InMemoryWorld::new(source.to_string(), main_path.to_path_buf());
     let mut tracer = Tracer::new();
     let document = compile(&world, &mut tracer)

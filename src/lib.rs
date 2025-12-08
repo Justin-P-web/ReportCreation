@@ -10,7 +10,7 @@ pub use block::{
     TextOptions, bullets, code, figure, image, link_to_location, link_to_url, numbered, paragraph,
     raw, table, text, text_with_options,
 };
-pub use report::{Outline, PageSection, Report};
+pub use report::{compile_pdf, Outline, PageSection, Report};
 pub use section::Section;
 
 #[cfg(test)]
