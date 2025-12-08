@@ -431,12 +431,14 @@ impl InMemoryWorld {
     /// - `source`: Typst source code to compile.
     /// - `main_path`: Path to the virtual entrypoint for Typst diagnostics.
     fn new(source: String, main_path: PathBuf) -> Self {
-        let root = main_path
+        let base_root = main_path
             .parent()
             .map(Path::to_path_buf)
-            .unwrap_or_else(|| PathBuf::from("."))
+            .unwrap_or_else(|| PathBuf::from("."));
+
+        let root = base_root
             .canonicalize()
-            .unwrap_or_else(|_| PathBuf::from("."));
+            .unwrap_or(base_root);
 
         let main_id = FileId::new(
             None,

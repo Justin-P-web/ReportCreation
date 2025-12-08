@@ -3,6 +3,7 @@ use std::fs;
 use assert_cmd::Command;
 use predicates::prelude::*;
 use tempfile::tempdir;
+use ReportCreation as reportcreation;
 
 fn write_typst_fixture(dir: &std::path::Path) -> std::path::PathBuf {
     let typst_path = dir.join("sample.typ");
@@ -82,4 +83,29 @@ fn accepts_relative_input_path() {
         fs::metadata(&expected_output).is_ok(),
         "pdf should be written"
     );
+}
+
+#[test]
+fn resolves_imports_relative_to_input_file() {
+    let temp_dir = tempdir().expect("tempdir should be created");
+
+    let template_path = temp_dir.path().join("template.typ");
+    fs::write(&template_path, "#let greeting = \"Hello from template\"\n").expect("template should be written");
+
+    let nested_dir = temp_dir.path().join("reports");
+    fs::create_dir_all(&nested_dir).expect("nested dir should be created");
+
+    let input_path = nested_dir.join("import_test.typ");
+    fs::write(
+        &input_path,
+        "#import \"../template.typ\": greeting\n#greeting\n",
+    )
+    .expect("main typst file should be written");
+
+    let pdf_bytes = reportcreation::compile_pdf(
+        &fs::read_to_string(&input_path).expect("source should be readable"),
+        &input_path,
+    );
+
+    assert!(!pdf_bytes.is_empty(), "pdf should be generated when import resolves");
 }
