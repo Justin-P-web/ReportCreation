@@ -400,7 +400,9 @@ impl InMemoryWorld {
         let root = main_path
             .parent()
             .map(Path::to_path_buf)
-            .unwrap_or_else(|| PathBuf::from("."));
+            .unwrap_or_else(|| PathBuf::from("."))
+            .canonicalize()
+            .unwrap_or_else(|_| PathBuf::from("."));
 
         let main_id = FileId::new(
             None,
@@ -443,10 +445,7 @@ impl World for InMemoryWorld {
             return Ok(self.source.clone());
         }
 
-        let path = id
-            .vpath()
-            .resolve(&self.root)
-            .ok_or_else(|| FileError::NotFound(id.vpath().as_rootless_path().to_path_buf()))?;
+        let path = self.root.join(id.vpath().as_rootless_path());
 
         let text = fs::read_to_string(&path)
             .map_err(|_| FileError::NotFound(id.vpath().as_rootless_path().to_path_buf()))?;
@@ -455,10 +454,7 @@ impl World for InMemoryWorld {
     }
 
     fn file(&self, id: FileId) -> FileResult<Bytes> {
-        let path = id
-            .vpath()
-            .resolve(&self.root)
-            .ok_or_else(|| FileError::NotFound(id.vpath().as_rootless_path().to_path_buf()))?;
+        let path = self.root.join(id.vpath().as_rootless_path());
 
         fs::read(path)
             .map(Bytes::from)
