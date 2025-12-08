@@ -145,3 +145,27 @@ cargo run --bin report_creation -- path/to/input.typ --output path/to/output.pdf
 When `--output` is omitted, the CLI writes a PDF next to the input file with the
 `.pdf` extension. This can be handy for testing the generated Typst output
 without installing the Typst CLI separately.
+
+## Simple Typst quickstart
+
+If you're new to Typst and want to try the generated documents locally, you can
+use the CLI packaged with this repository to compile your first file without
+installing Typst separately:
+
+1. Review the [official Typst documentation](https://typst.app/docs/) for
+   syntax and layout basics.
+2. Create a new file (for example, `hello.typ`) with minimal content:
+   ```typst
+   #set page(width: 8.5in, height: 11in)
+   = Hello Typst
+
+   This document was generated with Typst.
+   ```
+3. Compile the Typst file into a PDF using the built-in compiler:
+   ```bash
+   cargo run --bin report_creation -- hello.typ --output hello.pdf
+   ```
+4. Open `hello.pdf` with your preferred PDF viewer to verify the output.
+
+This workflow mirrors how the library and CLI in this repository emit Typst
+source and compile it to PDF using the embedded Typst engine.
