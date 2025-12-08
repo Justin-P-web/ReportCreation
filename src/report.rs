@@ -493,7 +493,15 @@ impl World for InMemoryWorld {
 /// Compile Typst source into a PDF using the given file path as the Typst
 /// entrypoint.
 pub fn compile_pdf(source: &str, main_path: &Path) -> Vec<u8> {
-    let world = InMemoryWorld::new(source.to_string(), main_path.to_path_buf());
+    let main_path = if main_path.is_absolute() {
+        main_path.to_path_buf()
+    } else {
+        std::env::current_dir()
+            .unwrap_or_else(|_| PathBuf::from("."))
+            .join(main_path)
+    };
+
+    let world = InMemoryWorld::new(source.to_string(), main_path);
     let mut tracer = Tracer::new();
     let document = compile(&world, &mut tracer)
         .unwrap_or_else(|err| panic!("failed to compile Typst document to PDF: {err:?}"));
