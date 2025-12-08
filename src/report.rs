@@ -7,7 +7,7 @@ use std::{
 use time::{OffsetDateTime, UtcOffset};
 
 use crate::{
-    block::{paragraph, BlockNode},
+    block::{BlockNode, paragraph},
     render::render_blocks,
     section::Section,
 };
@@ -42,6 +42,10 @@ impl PageSection {
         self
     }
 
+    /// Return the blocks associated with this page section.
+    ///
+    /// The slices allows renderers to iterate over the configured header/footer
+    /// blocks without taking ownership.
     fn blocks(&self) -> &[BlockNode] {
         &self.blocks
     }
@@ -243,6 +247,10 @@ impl Report {
     }
 }
 
+/// Render the optional author metadata for Typst document configuration.
+///
+/// # Arguments
+/// - `author`: Optional author string to embed in the document header.
 fn render_author(author: Option<&str>) -> String {
     match author {
         Some(name) => format!(", author: \"{}\"", name),
@@ -250,6 +258,12 @@ fn render_author(author: Option<&str>) -> String {
     }
 }
 
+/// Render the page metadata for Typst using optional header and footer
+/// sections.
+///
+/// # Arguments
+/// - `header`: Optional page header content.
+/// - `footer`: Optional page footer content.
 fn render_page(header: Option<&PageSection>, footer: Option<&PageSection>) -> String {
     let mut parts = Vec::new();
 
@@ -264,6 +278,10 @@ fn render_page(header: Option<&PageSection>, footer: Option<&PageSection>) -> St
     parts.join(", ")
 }
 
+/// Render a page section into Typst markup.
+///
+/// # Arguments
+/// - `section`: Page section to render.
 fn render_page_section(section: &PageSection) -> String {
     let mut body = String::new();
     render_blocks(&mut body, section.blocks(), 0);
@@ -280,41 +298,49 @@ pub struct Outline {
 }
 
 impl Outline {
+    /// Create an empty outline configuration.
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Set the outline title that Typst will display.
     pub fn title<T: Into<String>>(mut self, title: T) -> Self {
         self.title = Some(title.into());
         self
     }
 
+    /// Set the outline target (such as `figure`).
     pub fn target<T: Into<String>>(mut self, target: T) -> Self {
         self.target = Some(target.into());
         self
     }
 
+    /// Set the indentation value Typst should use when rendering the outline.
     pub fn indent<T: Into<String>>(mut self, indent: T) -> Self {
         self.indent = Some(indent.into());
         self
     }
 
+    /// Limit the outline to a certain depth of headings.
     pub fn depth(mut self, depth: u8) -> Self {
         self.depth = Some(depth);
         self
     }
 
+    /// Convenience constructor for a table of contents outline.
     pub fn table_of_contents() -> Self {
         Self::new().title("none").indent("auto")
     }
 
+    /// Convenience constructor for a figure list outline.
     pub fn figure_list() -> Self {
-        Self::new()
-            .title("none")
-            .target("figure")
-            .indent("auto")
+        Self::new().title("none").target("figure").indent("auto")
     }
 
+    /// Render a Typst function that encapsulates the outline configuration.
+    ///
+    /// # Arguments
+    /// - `name`: The Typst function name to emit.
     pub fn render_function(&self, name: &str) -> String {
         let mut params = Vec::new();
 
@@ -350,14 +376,17 @@ fn figure_table_function() -> String {
     Outline::figure_list().render_function("figure_table")
 }
 
+/// Build the Typst filename derived from the report title.
 fn typst_file_name(title: &str) -> String {
     format!("{}.typ", normalized_stem(title))
 }
 
+/// Build the PDF filename derived from the report title.
 fn pdf_file_name(title: &str) -> String {
     format!("{}.pdf", normalized_stem(title))
 }
 
+/// Normalize the report title into a filesystem-friendly stem.
 fn normalized_stem(title: &str) -> String {
     let normalized = title
         .chars()
@@ -396,6 +425,11 @@ struct InMemoryWorld {
 }
 
 impl InMemoryWorld {
+    /// Create an in-memory Typst world that can compile the provided source.
+    ///
+    /// # Arguments
+    /// - `source`: Typst source code to compile.
+    /// - `main_path`: Path to the virtual entrypoint for Typst diagnostics.
     fn new(source: String, main_path: PathBuf) -> Self {
         let root = main_path
             .parent()

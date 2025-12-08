@@ -39,7 +39,7 @@ pub use block::{
     TextOptions, bullets, code, figure, image, link_to_location, link_to_url, numbered, paragraph,
     raw, table, text, text_with_options,
 };
-pub use report::{compile_pdf, Outline, PageSection, Report};
+pub use report::{Outline, PageSection, Report, compile_pdf};
 pub use section::Section;
 
 #[cfg(test)]
@@ -140,10 +140,8 @@ mod tests {
     fn renders_header_and_footer_sections_from_blocks() {
         let _guard = DirGuard::in_temp("renders_header_and_footer_sections_from_blocks");
 
-        let header_section =
-            PageSection::new().add_block(paragraph("Branded"));
-        let footer_section =
-            PageSection::new().add_block(paragraph("Confidential"));
+        let header_section = PageSection::new().add_block(paragraph("Branded"));
+        let footer_section = PageSection::new().add_block(paragraph("Confidential"));
 
         let rendered = Report::new("Detailed Report")
             .header(header_section)

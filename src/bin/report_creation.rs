@@ -8,7 +8,7 @@ use ReportCreation as reportcreation;
 #[command(author, version, about)]
 struct Cli {
     /// Path to the Typst file that should be compiled.
-    #[arg(value_name = "INPUT.typ")] 
+    #[arg(value_name = "INPUT.typ")]
     input: PathBuf,
 
     /// Output path for the generated PDF. Defaults to replacing the extension with `.pdf`.
