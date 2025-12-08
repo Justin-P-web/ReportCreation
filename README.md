@@ -1,11 +1,19 @@
 # ReportCreation
 
-A small Rust library for composing Typst reports programmatically. The API uses
-simple builders so you can stitch together sections, lists, tables, figures,
-links, and code snippets before rendering a ready-to-compile Typst document
-string.
+A small Rust library (and CLI) for composing Typst reports programmatically. The
+API uses simple builders so you can stitch together sections, lists, tables,
+figures, links, and code snippets before rendering a ready-to-compile Typst
+document string.
 
-## Usage
+## Features
+
+- Builder-based API for constructing rich Typst documents
+- Optional `polars` feature to turn `DataFrame`s into tables
+- Built-in Typst compilation helper and CLI to produce PDFs without installing
+  the Typst toolchain separately
+- Optional outline, table of contents, and table of figures generation
+
+## Library usage
 
 Add the crate to your project (path dependency shown for local development):
 
@@ -64,6 +72,13 @@ normalized version of the title (for example, `Weekly Status` becomes
 `weekly_status.typ`). Call `Report::generate_pdf(true)` to additionally write a
 compiled PDF alongside the Typst output.
 
+### Rendering and PDF output
+
+Use `Report::render` when you want the Typst source and file written to disk.
+If you already have Typst source, you can call `compile_pdf(source, path)` to
+produce PDF bytes using the embedded Typst engine and fonts, without needing a
+separate Typst installation.
+
 You can disable the outline with `Report::with_outline(false)`, add reusable page
 chrome with `Report::header` and `Report::footer`, add a table of contents with
 `Report::with_contents_table(true)`, include a table of figures via
@@ -116,3 +131,17 @@ let document = Report::new("Metrics")
 
 Each column name becomes a table header, and values are stringified row-by-row
 in the rendered Typst output.
+
+## Command-line PDF compiler
+
+The repository also ships a small CLI that compiles an existing Typst document
+into a PDF using the same embedded Typst engine as the library. Run it with
+Cargo:
+
+```bash
+cargo run --bin report_creation -- path/to/input.typ --output path/to/output.pdf
+```
+
+When `--output` is omitted, the CLI writes a PDF next to the input file with the
+`.pdf` extension. This can be handy for testing the generated Typst output
+without installing the Typst CLI separately.

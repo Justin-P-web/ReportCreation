@@ -1,3 +1,32 @@
+//! Builder utilities for composing Typst reports and rendering them to Typst
+//! source or PDF. The crate exposes ergonomic helpers for constructing sections,
+//! tables, figures, lists, code blocks, and links, then compiling the resulting
+//! document with the bundled Typst engine.
+//!
+//! # Examples
+//!
+//! Build a simple report and render it to Typst:
+//!
+//! ```
+//! use ReportCreation::{bullets, paragraph, table, Report, Section};
+//!
+//! let document = Report::new("Weekly Status")
+//!     .author("Ada Lovelace")
+//!     .add_front_matter(paragraph("Summary of the week's work."))
+//!     .add_section(
+//!         Section::new("Highlights")
+//!             .add_block(bullets(["Released v1.2", "Onboarded a new teammate"]))
+//!             .add_block(table(
+//!                 ["Key Metric", "Value"],
+//!                 [["Users", "1,024"], ["Error Budget", "99.98%"]],
+//!             )),
+//!     )
+//!     .render();
+//! ```
+//!
+//! You can also compile Typst source directly to PDF with
+//! [`compile_pdf`](crate::compile_pdf), which uses the embedded Typst engine and
+//! fonts to avoid extra system dependencies.
 mod block;
 mod render;
 mod report;
