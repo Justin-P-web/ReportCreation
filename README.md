@@ -135,11 +135,13 @@ in the rendered Typst output.
 ## Command-line PDF compiler
 
 The repository also ships a small CLI that compiles an existing Typst document
-into a PDF using the same embedded Typst engine as the library. Run it with
-Cargo:
+into a PDF using the same embedded Typst engine as the library. If you've
+already built the binary (for example, via `cargo build --release`) and have it
+available as `./target/release/report_creation` (or `report_creation.exe` on
+Windows), invoke it directly from your shell:
 
 ```bash
-cargo run --bin report_creation -- path/to/input.typ --output path/to/output.pdf
+./target/release/report_creation path/to/input.typ --output path/to/output.pdf
 ```
 
 When `--output` is omitted, the CLI writes a PDF next to the input file with the
@@ -149,8 +151,8 @@ without installing the Typst CLI separately.
 ## Simple Typst quickstart
 
 If you're new to Typst and want to try the generated documents locally, you can
-use the CLI packaged with this repository to compile your first file without
-installing Typst separately:
+use the prebuilt CLI packaged with this repository to compile your first file
+without installing Typst separately:
 
 1. Review the [official Typst documentation](https://typst.app/docs/) for
    syntax and layout basics.
@@ -161,9 +163,11 @@ installing Typst separately:
 
    This document was generated with Typst.
    ```
-3. Compile the Typst file into a PDF using the built-in compiler:
+3. Compile the Typst file into a PDF using the built-in compiler (assuming the
+   executable is available as `./target/release/report_creation` or
+   `report_creation.exe` in your shell):
    ```bash
-   cargo run --bin report_creation -- hello.typ --output hello.pdf
+   ./target/release/report_creation hello.typ --output hello.pdf
    ```
 4. Open `hello.pdf` with your preferred PDF viewer to verify the output.
 
