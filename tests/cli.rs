@@ -26,7 +26,9 @@ fn writes_pdf_next_to_input_by_default() {
         .arg(&input_path)
         .assert()
         .success()
-        .stdout(predicate::str::contains(expected_output.display().to_string()));
+        .stdout(predicate::str::contains(
+            expected_output.display().to_string(),
+        ));
 
     let pdf_bytes = fs::read(expected_output).expect("pdf should be written by CLI");
     assert!(!pdf_bytes.is_empty());
@@ -47,9 +49,14 @@ fn honors_custom_output_path() {
         .arg(&custom_output)
         .assert()
         .success()
-        .stdout(predicate::str::contains(custom_output.display().to_string()));
+        .stdout(predicate::str::contains(
+            custom_output.display().to_string(),
+        ));
 
-    assert!(fs::metadata(&custom_output).is_ok(), "custom pdf should exist");
+    assert!(
+        fs::metadata(&custom_output).is_ok(),
+        "custom pdf should exist"
+    );
 }
 
 #[test]
@@ -67,7 +74,12 @@ fn accepts_relative_input_path() {
         .arg(relative_input)
         .assert()
         .success()
-        .stdout(predicate::str::contains(relative_output.display().to_string()));
+        .stdout(predicate::str::contains(
+            relative_output.display().to_string(),
+        ));
 
-    assert!(fs::metadata(&expected_output).is_ok(), "pdf should be written");
+    assert!(
+        fs::metadata(&expected_output).is_ok(),
+        "pdf should be written"
+    );
 }
