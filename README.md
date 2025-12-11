@@ -141,12 +141,28 @@ available as `./target/release/report_creation` (or `report_creation.exe` on
 Windows), invoke it directly from your shell:
 
 ```bash
-./target/release/report_creation path/to/input.typ --output path/to/output.pdf
+./target/release/report_creation compile path/to/input.typ --output path/to/output.pdf
 ```
 
 When `--output` is omitted, the CLI writes a PDF next to the input file with the
 `.pdf` extension. This can be handy for testing the generated Typst output
-without installing the Typst CLI separately.
+without installing the Typst CLI separately. The `compile` subcommand is the
+default, so you can omit it for backward compatibility:
+
+```bash
+./target/release/report_creation path/to/input.typ
+```
+
+### Running the dispatcher loop
+
+The CLI also exposes a `start` subcommand for kicking off a long-running
+dispatcher loop. The dispatcher advances time based on a configurable
+tick rate (in hertz) and runs indefinitely until interrupted. By default it uses
+60 ticks per second, but you can override this with `--tick-rate`:
+
+```bash
+./target/release/report_creation start --tick-rate 120
+```
 
 ## Simple Typst quickstart
 
