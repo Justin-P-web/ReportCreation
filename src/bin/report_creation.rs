@@ -1,5 +1,12 @@
 use clap::{Args, Parser, Subcommand};
-use std::{fs, path::PathBuf, thread, time::Duration};
+use std::{
+    fs,
+    io::{self, BufRead},
+    path::PathBuf,
+    sync::mpsc,
+    thread,
+    time::{Duration, Instant},
+};
 
 use ReportCreation as reportcreation;
 
@@ -47,9 +54,19 @@ struct StartArgs {
     tick_rate: u64,
 }
 
+enum Command {
+    Pause,
+    Resume,
+    Step(u64),
+    SetTickRate(u64),
+    Custom(String),
+    Terminate,
+}
+
 struct Dispatcher {
     tick_rate: u64,
     tick_duration: Duration,
+    paused: bool,
 }
 
 impl Dispatcher {
@@ -58,23 +75,47 @@ impl Dispatcher {
         Self {
             tick_rate,
             tick_duration,
+            paused: false,
         }
     }
 
-    fn run_for_ticks(&self, ticks: u64) {
-        for _ in 0..ticks {
-            self.advance_tick();
-        }
+    fn update_tick_rate(&mut self, tick_rate: u64) {
+        self.tick_rate = tick_rate;
+        self.tick_duration = Duration::from_nanos(1_000_000_000u64.saturating_div(tick_rate));
+        println!("Tick rate updated to {} ticks/second", self.tick_rate);
     }
 
-    fn run_forever(&self) -> ! {
-        loop {
-            self.run_for_ticks(u64::MAX);
+    fn handle_command(&mut self, command: Command) -> bool {
+        match command {
+            Command::Pause => {
+                self.paused = true;
+                println!("Dispatcher paused");
+            }
+            Command::Resume => {
+                self.paused = false;
+                println!("Dispatcher resumed");
+            }
+            Command::Step(count) => {
+                println!("Stepping dispatcher for {count} tick(s)");
+                for _ in 0..count {
+                    self.process_tick();
+                }
+            }
+            Command::SetTickRate(rate) => self.update_tick_rate(rate),
+            Command::Custom(message) => {
+                println!("Received custom command: {message}");
+            }
+            Command::Terminate => {
+                println!("Termination command received. Exiting dispatcher.");
+                return true;
+            }
         }
+
+        false
     }
 
-    fn advance_tick(&self) {
-        thread::sleep(self.tick_duration);
+    fn process_tick(&self) {
+        // Placeholder for simulator progression logic.
     }
 }
 
@@ -112,12 +153,107 @@ fn compile(args: CompileArgs) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn start(args: StartArgs) -> ! {
-    let dispatcher = Dispatcher::new(args.tick_rate);
+    let mut dispatcher = Dispatcher::new(args.tick_rate);
+    let (tx, rx) = mpsc::channel();
 
     println!(
         "Starting dispatcher at {} ticks/second",
         dispatcher.tick_rate
     );
 
-    dispatcher.run_forever();
+    spawn_stdin_listener(tx.clone());
+
+    loop {
+        let iteration_start = Instant::now();
+
+        let mut should_terminate = false;
+        while let Ok(command) = rx.try_recv() {
+            if dispatcher.handle_command(command) {
+                should_terminate = true;
+                break;
+            }
+        }
+
+        if should_terminate {
+            break;
+        }
+
+        if !dispatcher.paused {
+            dispatcher.process_tick();
+        }
+
+        let elapsed = iteration_start.elapsed();
+        if elapsed < dispatcher.tick_duration {
+            thread::sleep(dispatcher.tick_duration - elapsed);
+        }
+    }
+
+    std::process::exit(0);
+}
+
+fn spawn_stdin_listener(tx: mpsc::Sender<Command>) {
+    thread::spawn(move || {
+        let stdin = io::stdin();
+        for line in stdin.lock().lines() {
+            match line {
+                Ok(text) => {
+                    let trimmed = text.trim();
+                    if trimmed.is_empty() {
+                        continue;
+                    }
+
+                    match parse_command(trimmed) {
+                        Ok(command) => {
+                            if tx.send(command).is_err() {
+                                break;
+                            }
+                        }
+                        Err(err) => eprintln!("{err}"),
+                    }
+                }
+                Err(err) => {
+                    eprintln!("Failed to read from stdin: {err}");
+                    break;
+                }
+            }
+        }
+    });
+}
+
+fn parse_command(input: &str) -> Result<Command, String> {
+    let mut parts = input.split_whitespace();
+    let verb = parts
+        .next()
+        .ok_or_else(|| "empty command received".to_string())?
+        .to_lowercase();
+
+    match verb.as_str() {
+        "pause" => Ok(Command::Pause),
+        "resume" => Ok(Command::Resume),
+        "step" => {
+            let count = if let Some(value) = parts.next() {
+                value
+                    .parse::<u64>()
+                    .map_err(|_| format!("Invalid step count: {value}"))?
+            } else {
+                1
+            };
+            Ok(Command::Step(count))
+        }
+        "rate" | "tick_rate" => {
+            let value = parts
+                .next()
+                .ok_or_else(|| "tick rate requires a numeric value".to_string())?;
+            let rate = value
+                .parse::<u64>()
+                .map_err(|_| format!("Invalid tick rate: {value}"))?;
+            if rate == 0 {
+                return Err("Tick rate must be greater than zero".to_string());
+            }
+            Ok(Command::SetTickRate(rate))
+        }
+        "custom" => Ok(Command::Custom(parts.collect::<Vec<_>>().join(" "))),
+        "quit" | "exit" | "terminate" => Ok(Command::Terminate),
+        other => Err(format!("Unknown command: {other}")),
+    }
 }
